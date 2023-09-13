@@ -78,7 +78,10 @@ glm::mat4 CelestialBody::render(std::chrono::microseconds elapsed_time,
 	_body.node.render(view_projection, world);
 
 	//Excercise 4: Calculate child's transformation
-	children_transform = R2o * R1o *  To; //Apply the parent translation to the orbit and the orbit rotation + inclination
+	//Translate to the parent's orbit
+	//Tilt the children's orbit surface to an angle equal to the parent's spin tilt angle around Z-axis
+	//Then apply the previous parent's transformation
+	children_transform = parent_transform* R2o * R1o *  To * R2s;
 	//End excercise 4
 	return children_transform;
 }

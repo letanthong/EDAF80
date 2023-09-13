@@ -11,6 +11,7 @@
 
 #include <clocale>
 #include <cstdlib>
+#include <stack>
 
 
 int main()
@@ -168,6 +169,11 @@ int main()
 	earth.set_orbit({-2.5f, glm::radians(45.0f), glm::two_pi<float>() / 10.0f});
 	earth.add_child(&moon);
 
+	//CelestialBody venus(sphere, &celestial_body_shader, venus_texture);
+	//venus.set_spin(earth_spin);
+	//venus.set_orbit({ 2.5f, glm::radians(45.0f), glm::pi<float>() / 10.0f });
+	//moon.add_child(&venus);
+
 	//
 	// Define the colour and depth used for clearing.
 	//
@@ -248,12 +254,18 @@ int main()
 		// TODO: Replace this explicit rendering of the Earth and Moon
 		// with a traversal of the scene graph and rendering of all its
 		// nodes.
+		std::stack <struct CelestialBodyRef> SolarSystem;
+		CelestialBodyRef Earth;
 
+		SolarSystem.push(Earth);
+
+		//Comment out for the excercise 5
+		glm::mat4 returnrender(1.0f);
 		//glm::mat4 returnrender = earth.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)), show_basis);
-		glm::mat4 returnrender = earth.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::mat4(1.0f), show_basis);
+		returnrender = earth.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::mat4(1.0f), show_basis);
 		//moon.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::mat4(1.0f), show_basis); //Original
-		moon.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), returnrender, show_basis);
-				
+		returnrender = moon.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), returnrender, show_basis);
+		//returnrender = venus.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), returnrender, show_basis);
 
 		//
 		// Add controls to the scene.
