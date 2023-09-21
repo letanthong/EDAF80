@@ -50,7 +50,9 @@ edaf80::Assignment2::run()
 		return;
 
 	// Set up the camera
-	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.5f)); //Ex1.1: Change camera translation
+	//mCamera.mWorld.SetTranslate(glm::vec3(0.0f, -0.5f, 0.0f)); //Ex3: Change camera translation
+	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 1.0f, 9.0f)); //Ex4: Change camera translation
+	//mCamera.mWorld.SetRotateX(glm::half_pi<float>()); //Ex3
 	mCamera.mMouseSensitivity = glm::vec2(0.003f);
 	mCamera.mMovementSpeed = glm::vec3(3.0f); // 3 m/s => 10.8 km/h
 
@@ -141,7 +143,7 @@ edaf80::Assignment2::run()
 	glEnable(GL_DEPTH_TEST);
 
 
-	auto const control_point_sphere = parametric_shapes::createSphere(0.1f, 10u, 10u);
+	auto const control_point_sphere = parametric_shapes::createSphere(0.1f, 20u, 20u);
 	std::array<glm::vec3, 9> control_point_locations = {
 		glm::vec3( 0.0f,  0.0f,  0.0f),
 		glm::vec3( 1.0f,  1.8f,  1.0f),
@@ -218,15 +220,50 @@ edaf80::Assignment2::run()
 		if (interpolate) {
 			//! \todo Interpolate the movement of a shape between various
 			//!        control points.
+			//Node MyNode;
+			//auto const node_shape = parametric_shapes::createSphere(0.2f, 10u, 10u);
+			//MyNode.set_geometry(node_shape);
+			//MyNode.set_program(&diffuse_shader, set_uniforms);
+			//MyNode.get_transform().SetTranslate(control_point_locations[0]); //Move the object to the first point
+			//MyNode.render(mCamera.GetWorldToClipMatrix());
+
+			float duration = 1.0f; //Total time to move along all the control points
+			int numb_cp = control_points.size();
+			glm::vec3 newLoc;
+			int i = 0;
+
+			use_linear = false;
+
 			if (use_linear) {
 				//! \todo Compute the interpolated position
 				//!       using the linear interpolation.
+
+				float x = fmod(elapsed_time_s, duration);
+				int index = static_cast<int> (elapsed_time_s / duration);
+				glm::vec3 p0 = control_point_locations[index % numb_cp];
+				glm::vec3 p1 = control_point_locations[(index + 1) % numb_cp];
+				newLoc = interpolation::evalLERP(p0, p1, x);
+				circle_rings.get_transform().SetTranslate(newLoc);
+								
 			}
 			else {
 				//! \todo Compute the interpolated position
 				//!       using the Catmull-Rom interpolation;
 				//!       use the `catmull_rom_tension`
 				//!       variable as your tension argument.
+
+				float x = fmod(elapsed_time_s, duration);
+				int index = static_cast<int> (elapsed_time_s / duration);
+				//float catmull_rom_tension = 0.5f;
+
+				glm::vec3 p0 = control_point_locations[index % numb_cp];
+				glm::vec3 p1 = control_point_locations[(index+1) % numb_cp];
+				glm::vec3 p2 = control_point_locations[(index + 2) % numb_cp];
+				glm::vec3 p3 = control_point_locations[(index + 3) % numb_cp];
+
+				newLoc = interpolation::evalCatmullRom(p0, p1, p2, p3, catmull_rom_tension, x);
+				circle_rings.get_transform().SetTranslate(newLoc);
+				
 			}
 		}
 

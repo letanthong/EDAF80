@@ -172,7 +172,8 @@ parametric_shapes::createSphere(float const radius,
 				0.0f);
 
 			// tangent
-			auto const t = glm::vec3(radius * cos_theta * sin_phi, 0.0f, -1.0f * radius * sin_theta * sin_phi);
+			//auto const t = glm::vec3(radius * cos_theta * sin_phi, 0.0f, -1.0f * radius * sin_theta * sin_phi);
+			auto const t = glm::vec3(radius * cos_theta, 0.0f, -1.0f * radius * sin_theta); //simplified
 			tangents[index] = t;
 
 			// binormal
