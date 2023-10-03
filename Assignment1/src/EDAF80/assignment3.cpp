@@ -80,6 +80,21 @@ edaf80::Assignment3::run()
 	                                         { { ShaderType::vertex, "EDAF80/texcoord.vert" },
 	                                           { ShaderType::fragment, "EDAF80/texcoord.frag" } },
 	                                         texcoord_shader);
+
+	GLuint skybox_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Skybox",
+											{ { ShaderType::vertex, "EDAF80/skybox.vert" },
+											  { ShaderType::fragment, "EDAF80/skybox.frag" } },
+											skybox_shader
+											);
+
+	GLuint phong_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Phong shader",
+											{ { ShaderType::vertex, "EDAF80/phong.vert" },
+											  { ShaderType::fragment, "EDAF80/phong.frag" } },
+											phong_shader
+											);
+
 	if (texcoord_shader == 0u)
 		LogError("Failed to load texcoord shader");
 
@@ -106,10 +121,22 @@ edaf80::Assignment3::run()
 		return;
 	}
 
+	GLuint const skybox_texture = bonobo::loadTextureCubeMap(
+		config::resources_path("cubemaps/NissiBeach2/posx.jpg"), config::resources_path("cubemaps/NissiBeach2/negx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posy.jpg"), config::resources_path("cubemaps/NissiBeach2/negy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posz.jpg"), config::resources_path("cubemaps/NissiBeach2/negz.jpg"),
+		true
+	);
+
+	GLuint const normal_texture = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_nor_2k.jpg"), true);
+	GLuint const diffuse_texture = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_coll1_2k.jpg"), true);
+	GLuint const specular_texture = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_rough_2k.jpg"), true);
+
 	Node skybox;
 	skybox.set_geometry(skybox_shape);
-	skybox.set_program(&fallback_shader, set_uniforms);
-
+	skybox.add_texture("skybox_texture", skybox_texture, GL_TEXTURE_CUBE_MAP);
+	skybox.set_program(&skybox_shader, set_uniforms);
+	
 	auto demo_shape = parametric_shapes::createSphere(1.5f, 40u, 40u);
 	if (demo_shape.vao == 0u) {
 		LogError("Failed to retrieve the mesh for the demo sphere");
@@ -125,7 +152,10 @@ edaf80::Assignment3::run()
 	Node demo_sphere;
 	demo_sphere.set_geometry(demo_shape);
 	demo_sphere.set_material_constants(demo_material);
-	demo_sphere.set_program(&fallback_shader, phong_set_uniforms);
+	demo_sphere.add_texture("normal_texture", normal_texture, GL_TEXTURE_2D);
+	demo_sphere.add_texture("diffuse_texture", diffuse_texture, GL_TEXTURE_2D);
+	demo_sphere.add_texture("specular_texture", specular_texture, GL_TEXTURE_2D);
+	demo_sphere.set_program(&phong_shader, phong_set_uniforms);
 
 
 	glClearDepthf(1.0f);

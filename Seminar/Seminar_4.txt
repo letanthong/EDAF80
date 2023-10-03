@@ -1,0 +1,65 @@
+Seminar 4 recap
+
+1. Implement the wave function
+
+return 0.05*sin( 25.0 * (0.4*p.x + 0.2*p.y) + 5.0* time); // Replace with wave function
+
+2. Flag implementation
+#version 300 es
+precision highp float;
+
+uniform float time;
+
+in vec2 var_tex;
+
+out vec4 color;
+
+vec3 checkboard(vec2 coord) {
+    vec3 red = vec3(1.0, 0.0, 0.0);
+    vec3 yellow = vec3(1.0, 1.0, 0.0);
+    float freq = 10.0;
+    return (mod(freq * coord.s, 1.0) < 0.5) ^^
+           (mod(freq * coord.t, 1.0) < 0.5) ? red : yellow;
+}
+
+vec3 france(vec2 coord) {
+    vec3 blue = vec3(0.0, 0.0, 1.0);
+    vec3 white = vec3(1.0, 1.0, 1.0);
+    vec3 red = vec3(1.0, 0.0, 0.0);
+    vec3 finalcolor;
+    float freq = 10.0;
+    if(coord.s < 0.33)
+    {
+        finalcolor = blue;
+    }
+    else if(coord.s > 0.67)
+    {
+        finalcolor = red;
+    }
+    else
+    {
+        finalcolor = white;
+    }
+    return finalcolor;
+}
+
+vec3 sweden(vec2 coord) {
+    vec3 blue = vec3(0.0, 0.0, 1.0);
+    vec3 yellow = vec3(1.0, 1.0, 0.0);
+    vec3 finalcolor;
+    if(coord.s > 0.33 && coord.s < 0.44)
+    {
+        return yellow;
+    }
+
+    if(coord.t > 0.44 && coord.t < 0.55)
+    {
+        return yellow;
+    }
+
+    return blue;
+}
+            
+void main() {
+    color = vec4(sweden(var_tex), 1.0);
+}
