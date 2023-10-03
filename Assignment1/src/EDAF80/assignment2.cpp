@@ -46,6 +46,7 @@ edaf80::Assignment2::run()
 	//auto const shape = parametric_shapes::createCircleRing(2.0f, 0.75f, 40u, 4u);
 	//auto const shape = parametric_shapes::createQuad(0.25f, 0.15f); //Ex 1
 	auto const shape = parametric_shapes::createSphere(0.15f, 10u, 10u); //Ex 2
+	//auto const shape = parametric_shapes::createTorus(0.5f, 0.2f, 10u, 10u);
 	if (shape.vao == 0u)
 		return;
 
@@ -144,6 +145,7 @@ edaf80::Assignment2::run()
 
 
 	auto const control_point_sphere = parametric_shapes::createSphere(0.1f, 20u, 20u);
+	//auto const control_point_sphere = parametric_shapes::createTorus(0.5f, 0.2f, 20u, 20u);
 	std::array<glm::vec3, 9> control_point_locations = {
 		glm::vec3( 0.0f,  0.0f,  0.0f),
 		glm::vec3( 1.0f,  1.8f,  1.0f),
@@ -231,8 +233,6 @@ edaf80::Assignment2::run()
 			int numb_cp = control_points.size();
 			glm::vec3 newLoc;
 			int i = 0;
-
-			use_linear = false;
 
 			if (use_linear) {
 				//! \todo Compute the interpolated position
