@@ -1,0 +1,68 @@
+auto const horizontal_slice_edges_count = horizontal_split_count + 1u;
+auto const vertical_slice_edges_count = vertical_split_count + 1u;
+auto const horizontal_slice_vertices_count = horizontal_slice_edges_count + 1u;
+auto const vertical_slice_vertices_count = vertical_slice_edges_count + 1u;
+auto const vertices_nb = horizontal_slice_vertices_count * vertical_slice_vertices_count;
+
+auto vertices = std::vector<glm::vec3>(vertices_nb);
+auto normals = std::vector<glm::vec3>(vertices_nb);
+auto texcoords = std::vector<glm::vec3>(vertices_nb);
+auto tangents = std::vector<glm::vec3>(vertices_nb);
+auto binormals = std::vector<glm::vec3>(vertices_nb);
+
+float const d_horizon = width / (static_cast<float>(horizontal_slice_edges_count));
+float const d_vertical = height / (static_cast<float>(vertical_slice_edges_count));
+
+// generate vertices iteratively
+size_t index = 0u;
+
+
+for (unsigned int i = 0u; i < horizontal_slice_edges_count; ++i) {
+
+	//float distance_to_centre = radius;
+	for (unsigned int j = 0u; j < vertical_slice_edges_count; ++j) {
+		float const cos_phi = std::cos(phi);
+		float const sin_phi = std::sin(phi);
+		// vertex
+		vertices[index] = glm::vec3(i*d_horizon, 0.0f, j*d_vertical);
+
+		// texture coordinates
+		texcoords[index] = glm::vec3(static_cast<float>(j) / (static_cast<float>(horizontal_slice_vertices_count)),
+			static_cast<float>(i) / (static_cast<float>(vertical_slice_vertices_count)),
+			0.0f);
+		++index;
+	}
+}
+
+// create index array
+auto index_sets = std::vector<glm::uvec3>(2u * horizontal_slice_edges_count * vertical_slice_edges_count);
+
+// generate indices iteratively
+index = 0u;
+for (unsigned int i = 0u; i < horizontal_slice_edges_count; ++i)
+{
+	for (unsigned int j = 0u; j < vertical_slice_edges_count; ++j)
+	{
+		index_sets[index] = glm::uvec3( horizontal_slice_vertices_count * (i + 0u) + (j + 0u),
+										horizontal_slice_vertices_count * (i + 1u) + (j + 0u),
+										horizontal_slice_vertices_count * (i + 0u) + (j + 1u));
+		++index;
+
+		index_sets[index] = glm::uvec3( vertical_slice_vertices_count * (i + 1u) + (j + 0u),
+										vertical_slice_vertices_count * (i + 1u) + (j + 1u),
+										vertical_slice_vertices_count * (i + 0u) + (j + 1u));
+		++index;
+	}
+}
+
+bonobo::mesh_data data;
+glGenVertexArrays(1, &data.vao);
+assert(data.vao != 0u);
+glBindVertexArray(data.vao);
+
+auto const vertices_offset = 0u;
+auto const vertices_size = static_cast<GLsizeiptr>(vertices.size() * sizeof(glm::vec3));
+auto const texcoords_offset = normals_offset + normals_size;
+auto const texcoords_size = static_cast<GLsizeiptr>(texcoords.size() * sizeof(glm::vec3));
+
+auto const bo_size = static_cast<GLsizeiptr>(vertices_size + texcoords_size);

@@ -21,11 +21,11 @@ out VS_OUT {
 void main()
 {
 	vs_out.vertex = vec3(vertex_model_to_world * vec4(vertex, 1.0));
-	vs_out.normal = vec3(normal_model_to_world * vec4(normal, 0.0));
+	vs_out.normal = (normal_model_to_world * vec4(normal, 0.0)).xyz;
 	vs_out.text_coord = text_coord.xy;
 
-	vec3 T = normalize(vec3(normal_model_to_world * vec4(tangents, 0.0)));
-	vec3 B = normalize(vec3(normal_model_to_world * vec4(binormal, 0.0)));
+	vec3 T = normalize(vec3(vertex_model_to_world * vec4(tangents, 0.0)));
+	vec3 B = normalize(vec3(vertex_model_to_world * vec4(binormal, 0.0)));
 	vec3 N = normalize(vec3(normal_model_to_world * vec4(normal, 0.0)));
 	vs_out.TBN = mat3(T, B, N);
 

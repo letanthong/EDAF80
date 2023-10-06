@@ -14,11 +14,7 @@ uniform sampler2D normal_texture;
 
 uniform bool use_normal_mapping;
 
-vec3 ka; //Material ambient
-vec3 kd; //Material diffuse
-vec3 ks; //Material specular
-vec3 normal;
-vec3 N;
+
 
 in VS_OUT {
 	vec3 vertex;
@@ -31,6 +27,11 @@ out vec4 frag_color;
 
 void main()
 {
+vec3 ka; //Material ambient
+vec3 kd; //Material diffuse
+vec3 ks; //Material specular
+vec3 normal;
+vec3 N;
 	if(use_normal_mapping == true)
 	{
 		normal = texture(normal_texture, fs_in.text_coord).rgb;
@@ -39,19 +40,19 @@ void main()
 	}
 	else
 	{
-		vec3 N = normalize(fs_in.normal); //Normal vector
+		N = normalize(fs_in.normal); //Normal vector
 	}
 
-	ka = texture(diffuse_texture, fs_in.text_coord).rgb;
 	kd = texture(diffuse_texture, fs_in.text_coord).rgb;
 	ks = texture(specular_texture, fs_in.text_coord).rgb;
 
 	vec3 L = normalize(light_position - fs_in.vertex); //Light vector
 	vec3 V = normalize(camera_position - fs_in.vertex); //Viewer vector
 
-	vec3 ambient = ka * ambient_colour;
-	vec3 diffuse = kd * diffuse_colour * max( dot(N, L), 0.0);
-	vec3 specular = ks * specular_colour * pow( max( dot(reflect(-L,N), V) , 0.0 ), shininess_value ); //where reflect(-L,N) is the ligh reflect vector
+	//vec3 ambient = ka * ambient_colour;
+	vec3 diffuse = kd  * max( dot(N, L), 0.0);
+	vec3 specular = ks * pow( max( dot(reflect(-L,N), V) , 0.0 ), shininess_value ); //where reflect(-L,N) is the ligh reflect vector
 
-	frag_color = vec4(ambient + diffuse + specular, 1.0);
+	frag_color.xyz = ambient_colour + diffuse + specular;
+	frag_color.w = 1.0;
 }
