@@ -51,16 +51,16 @@ parametric_shapes::createQuad(float const width, float const height,
 				texcoords[index] = glm::vec3(static_cast<float>(j) / (static_cast<float>(horizontal_slice_vertices_count)), 0.0f,
 					static_cast<float>(i) / (static_cast<float>(vertical_slice_vertices_count)));
 
-				auto const t = glm::vec3(1.0f, 0.0f, 0.0f);
-				tangents[index] = t;
+				//auto const t = glm::vec3(1.0f, 0.0f, 0.0f);
+				//tangents[index] = t;
 
-				// binormal
-				auto const b = glm::vec3(0.0f, 0.0f, 1.0f);
-				binormals[index] = b;
+				//// binormal
+				//auto const b = glm::vec3(0.0f, 0.0f, 1.0f);
+				//binormals[index] = b;
 
-				// normal
-				auto const n = glm::vec3(0.0f, 1.0f, 0.0f);
-				normals[index] = n;
+				//// normal
+				//auto const n = glm::vec3(0.0f, 1.0f, 0.0f);
+				//normals[index] = n;
 				++index;
 			}
 		}
@@ -183,8 +183,8 @@ parametric_shapes::createSphere(float const radius,
 										radius * cos_theta * sin_phi);
 
 			// texture coordinates
-			texcoords[index] = glm::vec3(static_cast<float>(j) / (static_cast<float>(latitude_slice_vertices_count)),
-				static_cast<float>(i) / (static_cast<float>(longtitude_slice_vertices_count)),
+			texcoords[index] = glm::vec3(static_cast<float>(i) / (static_cast<float>(latitude_slice_vertices_count)),
+				static_cast<float>(j) / (static_cast<float>(longtitude_slice_vertices_count)),
 				0.0f);
 
 			// tangent
@@ -217,9 +217,9 @@ parametric_shapes::createSphere(float const radius,
 	{
 		for (unsigned int j = 0u; j < latitude_slice_edges_count; ++j)
 		{
-			index_sets[index] = glm::uvec3( longtitude_slice_vertices_count * (i + 0u) + (j + 0u),
-											longtitude_slice_vertices_count * (i + 1u) + (j + 0u),
-											longtitude_slice_vertices_count * (i + 0u) + (j + 1u));
+			index_sets[index] = glm::uvec3(latitude_slice_vertices_count * (i + 0u) + (j + 0u),
+											latitude_slice_vertices_count * (i + 1u) + (j + 0u),
+											latitude_slice_vertices_count * (i + 0u) + (j + 1u));
 			++index;
 
 			index_sets[index] = glm::uvec3( latitude_slice_vertices_count * (i + 1u) + (j + 0u),

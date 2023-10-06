@@ -148,6 +148,12 @@ edaf80::Assignment4::run()
 	}
 
 	GLuint const water_normal_texture = bonobo::loadTexture2D(config::resources_path("textures/waves.png"), true);
+	GLuint const water_reflection_texture = bonobo::loadTextureCubeMap(
+		config::resources_path("cubemaps/NissiBeach2/posx.jpg"), config::resources_path("cubemaps/NissiBeach2/negx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posy.jpg"), config::resources_path("cubemaps/NissiBeach2/negy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posz.jpg"), config::resources_path("cubemaps/NissiBeach2/negz.jpg"),
+		true
+	);
 
 	//Add material
 	bonobo::material_data water_material;
@@ -159,6 +165,7 @@ edaf80::Assignment4::run()
 	Node water_surface;
 	water_surface.set_geometry(water_shape);
 	water_surface.add_texture("water_normal_texture", water_normal_texture, GL_TEXTURE_2D );
+	water_surface.add_texture("water_reflection_texture", water_reflection_texture, GL_TEXTURE_CUBE_MAP);
 	water_surface.set_material_constants(water_material);
 	//water_surface.set_program(&water_shader, water_set_uniforms);
 	
@@ -181,7 +188,7 @@ edaf80::Assignment4::run()
 	bool show_basis = false;
 	float basis_thickness_scale = 1.0f;
 	float basis_length_scale = 1.0f;
-
+	bool use_normal_mapping = true;
 	changeCullMode(cull_mode);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -192,7 +199,7 @@ edaf80::Assignment4::run()
 			elapsed_time_s += std::chrono::duration<float>(deltaTimeUs).count();
 		}
 
-		bool use_normal_mapping = true;
+		
 		auto const water_set_uniforms = [&elapsed_time_s, &use_normal_mapping, &light_position, &camera_position](GLuint program) {
 			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
 			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
@@ -282,12 +289,8 @@ edaf80::Assignment4::run()
 			ImGui::Checkbox("Use normal mapping", &use_normal_mapping);
 			ImGui::SliderFloat("Basis thickness scale", &basis_thickness_scale, 0.0f, 100.0f);
 			ImGui::SliderFloat("Basis length scale", &basis_length_scale, 0.0f, 100.0f);
-			ImGui::Checkbox("Use normal mapping", &use_normal_mapping);
+
 			//user
-			ImGui::ColorEdit3("Ambient", glm::value_ptr(water_material.ambient));
-			ImGui::ColorEdit3("Diffuse", glm::value_ptr(water_material.diffuse));
-			ImGui::ColorEdit3("Specular", glm::value_ptr(water_material.specular));
-			ImGui::SliderFloat("Shininess", &water_material.shininess, 1.0f, 1000.0f);
 			ImGui::SliderFloat3("Light Position", glm::value_ptr(light_position), -20.0f, 20.0f);
 			//end user
 		}
