@@ -166,7 +166,7 @@ edaf80::Assignment5::run()
 
 	//Control points
 	auto const control_point_sphere = parametric_shapes::createSphere(0.1f, 10u, 10u);
-	std::array <glm::vec3, 9> control_point_locations = {
+	std::vector <glm::vec3> control_point_locations = {
 		glm::vec3(5.0f,  5.0f,  5.0f),
 		glm::vec3(1.0f,  1.8f,  1.0f),
 		glm::vec3(2.0f,  1.2f,  2.0f),
@@ -177,23 +177,27 @@ edaf80::Assignment5::run()
 		glm::vec3(-2.0f, -1.2f, -2.0f),
 		glm::vec3(-1.0f, -1.8f, -1.0f)
 	};
-	std::array<Node, control_point_locations.size()> control_points;
+	auto control_points_vecsize = control_point_locations.size();
+	std::array<Node, 9> control_points;
 	for (std::size_t i = 0; i < control_point_locations.size(); ++i) {
 		auto& control_point = control_points[i];
-		control_points.at(i).set_geometry(tuna_model.at(0));
+		control_point.set_geometry(control_point_sphere);
+		control_point.set_program(&diffuse_shader, set_uniforms);
+		control_point.get_transform().SetTranslate(control_point_locations[i]);
+		/*control_point.set_geometry(tuna_model.at(0));
 		control_point.add_texture("tuna_body_diff", tuna_body_diff, GL_TEXTURE_2D);
 		control_point.add_texture("tuna_body_rough", tuna_body_rough, GL_TEXTURE_2D);
 		control_point.add_texture("tuna_body_normal", tuna_body_normal, GL_TEXTURE_2D);
 		control_point.set_material_constants(tuna_material);
 		control_point.set_program(&diffuse_shader, set_uniforms);
-		control_point.get_transform().SetTranslate(control_point_locations[i]);
+		control_point.get_transform().SetTranslate(control_point_locations.at(i));*/
 	}
 
 	
 	//End control points
 
 	float elapsed_time_s = 0.0f;
-	bool pause_animation = true;
+	bool pause_animation = false;
 	bool use_orbit_camera = false;
 	auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -293,7 +297,7 @@ edaf80::Assignment5::run()
 			
 			skybox.render(mCamera.GetWorldToClipMatrix());
 			tuna.render(mCamera.GetWorldToClipMatrix());
-			//movement::moveObject(tuna, control_point_locations, 2.0f, elapsed_time_s, LINEAR);
+			edaf80::Assignment5::moveObject(tuna, control_point_locations, 1.0f, elapsed_time_s, CATTROM);
 		}
 
 
@@ -313,6 +317,7 @@ edaf80::Assignment5::run()
 			if (cull_mode_changed) {
 				changeCullMode(cull_mode);
 			}
+			ImGui::Checkbox("Pause animation", &pause_animation);
 			ImGui::Checkbox("Enable interpolation", &interpolate);
 			ImGui::Checkbox("Show control points", &show_control_points);
 			bonobo::uiSelectPolygonMode("Polygon mode", polygon_mode);
@@ -331,7 +336,6 @@ edaf80::Assignment5::run()
 	}
 }
 
-
 int main()
 {
 	std::setlocale(LC_ALL, "");
@@ -343,5 +347,34 @@ int main()
 		assignment5.run();
 	} catch (std::runtime_error const& e) {
 		LogError(e.what());
+	}
+}
+
+void edaf80::Assignment5::moveObject(Node& Object, const std::vector<glm::vec3>& _control_point_locations, float duration_s, float elapsed_time_s, IntepolateMethod method)
+{
+	int numb_cp = _control_point_locations.size();
+	glm::vec3 newLoc;
+	int i = 0;
+
+	if (LINEAR == method) {
+		float x = fmod(elapsed_time_s, duration_s);
+		int index = static_cast<int> (elapsed_time_s / duration_s);
+		glm::vec3 p0 = _control_point_locations[index % numb_cp];
+		glm::vec3 p1 = _control_point_locations[(index + 1) % numb_cp];
+		newLoc = interpolation::evalLERP(p0, p1, x);
+		Object.get_transform().SetTranslate(newLoc);
+	}
+	else {
+		float x = fmod(elapsed_time_s, duration_s);
+		int index = static_cast<int> (elapsed_time_s / duration_s);
+		float catmull_rom_tension = 0.5f;
+
+		glm::vec3 p0 = _control_point_locations[index % numb_cp];
+		glm::vec3 p1 = _control_point_locations[(index + 1) % numb_cp];
+		glm::vec3 p2 = _control_point_locations[(index + 2) % numb_cp];
+		glm::vec3 p3 = _control_point_locations[(index + 3) % numb_cp];
+
+		newLoc = interpolation::evalCatmullRom(p0, p1, p2, p3, catmull_rom_tension, x);
+		Object.get_transform().SetTranslate(newLoc);
 	}
 }

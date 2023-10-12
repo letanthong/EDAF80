@@ -2,12 +2,6 @@
 
 #include <glm/glm.hpp>
 
-enum IntepolateMethod
-{
-	LINEAR,
-	CATTROM
-};
-
 namespace interpolation
 {
 	//! \brief Linearly interpolate a position between two points.
