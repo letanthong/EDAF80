@@ -292,8 +292,20 @@ edaf80::Assignment5::run()
 			}
 			
 			skybox.render(mCamera.GetWorldToClipMatrix());
-			tuna.render(mCamera.GetWorldToClipMatrix());
+			//tuna.render(mCamera.GetWorldToClipMatrix());
 			//movement::moveObject(tuna, control_point_locations, 2.0f, elapsed_time_s, LINEAR);
+			/*float duration_s = 1.0f;
+			int numb_cp = control_point_locations.size();
+			glm::vec3 newLoc;
+			int i = 0;
+				float x = fmod(elapsed_time_s, duration_s);
+				int index = static_cast<int> (elapsed_time_s / duration_s);
+				glm::vec3 p0 = control_point_locations[index % numb_cp];
+				glm::vec3 p1 = control_point_locations[(index + 1) % numb_cp];
+				newLoc = interpolation::evalLERP(p0, p1, x);
+				tuna.get_transform().SetTranslate(newLoc);*/
+			//shark.render(mCamera.GetWorldToClipMatrix());
+			//seaweed.render(mCamera.GetWorldToClipMatrix());
 		}
 
 
