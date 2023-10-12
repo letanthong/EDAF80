@@ -50,10 +50,10 @@ void main()
 		normalCoord0.xy = fs_in.text_coord.xy * textScale + normalTime * normalSpeed;
 		normalCoord1.xy = fs_in.text_coord.xy * textScale * 2.0 + normalTime * normalSpeed * 4.0;
 		normalCoord2.xy = fs_in.text_coord.xy * textScale * 4.0 + normalTime * normalSpeed * 8.0;
-		normal0 = texture(water_normal_texture, normalCoord0.xy).rgb;
-		normal1 = texture(water_normal_texture, normalCoord0.xy).rgb;
-		normal2 = texture(water_normal_texture, normalCoord0.xy).rgb;
-		normal = (normal0 + normal1 + normal2) * 2.0 - 1.0;
+		normal0 = texture(water_normal_texture, normalCoord0.xy).rgb * 2.0 - 1.0;
+		normal1 = texture(water_normal_texture, normalCoord1.xy).rgb * 2.0 - 1.0;
+		normal2 = texture(water_normal_texture, normalCoord2.xy).rgb * 2.0 - 1.0;
+		normal = normal0 + normal1 + normal2;
 		N = normalize(fs_in.TBN * normal);
 	}
 	else

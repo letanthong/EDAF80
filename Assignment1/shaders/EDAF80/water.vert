@@ -50,10 +50,10 @@ void main()
 	wave(Amp2, Di_2, freq2, phase2, sharpness2, elapsed_time_s , displace_vertex, Grad);
 
 	vs_out.vertex = vec3(vertex_model_to_world * vec4(displace_vertex, 1.0f));
-	vs_out.normal = vec3(normal_model_to_world * vec4(vec3( -Grad.x, 1.0f, -Grad.z ), 1.0f));
+	vs_out.normal = vec3( -Grad.x, 1.0f, -Grad.z );
 	vs_out.text_coord = text_coord.xz;
-	vs_out.tangents = vec3(vertex_model_to_world * vec4(vec3( 1.0f, Grad.x, 0.0f ), 1.0f));
-	vs_out.binormal = vec3(vertex_model_to_world * vec4(vec3( 0.0f, Grad.z, 1.0f), 1.0f));
+	vs_out.tangents = vec3( 1.0f, Grad.x, 0.0f );
+	vs_out.binormal = vec3( 0.0f, Grad.z, 1.0f);
 	vs_out.time = elapsed_time_s;
 
 //	vec3 T = normalize(vec3(vertex_model_to_world * vec4(vs_out.tangents, 0.0)));
