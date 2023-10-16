@@ -7,25 +7,29 @@
 
 
 class Window;
-
-enum IntepolateMethod
-{
-	LINEAR,
-	CATTROM
-};
 namespace edaf80
 {
 	//! \brief Wrapper class for Assignment 5
 	class Assignment5 {
 	public:
+		enum MovingStyle
+		{
+			CONTROL_POINTS,
+			CIRCULAR,
+			FOREWARD,
+			BACKWARD,
+			UPWARD,
+			DOWNWARD
+		};
+
 		//! \brief Default constructor.
 		//!
 		//! It will initialise various modules of bonobo and retrieve a
 		//! window to draw to.
 		Assignment5(WindowManager& windowManager);
 
-		void moveObject(Node& Object, const std::vector<glm::vec3>& _control_point_locations,
-			float duration_s, float elapsed_time_s, enum IntepolateMethod method);
+		//void moveObject(Node& Object, const std::vector<glm::vec3>& _control_point_locations,
+		//	float duration_s, float elapsed_time_s, enum MovingStyle movingStyle);
 
 		//! \brief Default destructor.
 		//!
@@ -37,6 +41,9 @@ namespace edaf80
 		//! render loop.
 		void run();
 
+		void moveObject(Node& Object, const std::vector<glm::vec3>& _control_point_locations,
+			float duration_s, float elapsed_time_s, MovingStyle movingStyle);
+
 	private:
 		FPSCameraf     mCamera;
 		InputHandler   inputHandler;
@@ -45,8 +52,3 @@ namespace edaf80
 	};
 }
 
-namespace movement
-{
-	//Moving an object along a list of control points within a predefined duration
-	
-}

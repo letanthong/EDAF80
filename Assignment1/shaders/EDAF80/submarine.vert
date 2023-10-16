@@ -22,11 +22,6 @@ out VS_OUT {
 void main()
 {
 	vec3 vertex_pos = vertex;
-	
-//	float pivot_angle = cos(elapsed_time_s) * 0.1f;
-//	mat2 rotation_matrix = mat2(vec2(cos(pivot_angle), -sin(pivot_angle)), vec2(sin(pivot_angle), cos(pivot_angle)));
-//	vertex_pos.xz = rotation_matrix * vertex_pos.xz;
-//	vs_out.vertex = vec3(vertex_model_to_world * vec4(vertex, 1.0));
 	vs_out.vertex = vec3(vertex_model_to_world * vec4(vertex_pos, 1.0));
 	vs_out.texcoord = texcoord.xy;
 	vs_out.normal = (normal_model_to_world * vec4(normal, 0.0)).xyz;
