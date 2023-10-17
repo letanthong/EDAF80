@@ -53,15 +53,6 @@ edaf80::Assignment5::run()
 
 	// Create the shader programs
 	ShaderProgramManager program_manager;
-	GLuint fallback_shader = 0u;
-	program_manager.CreateAndRegisterProgram("Fallback",
-	                                         { { ShaderType::vertex, "common/fallback.vert" },
-	                                           { ShaderType::fragment, "common/fallback.frag" } },
-	                                         fallback_shader);
-	if (fallback_shader == 0u) {
-		LogError("Failed to load fallback shader");
-		return;
-	}
 
 	GLuint diffuse_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Diffuse",
@@ -71,31 +62,14 @@ edaf80::Assignment5::run()
 	if (diffuse_shader == 0u)
 		LogError("Failed to load diffuse shader");
 
-	GLuint normal_shader = 0u;
-	program_manager.CreateAndRegisterProgram("Normal",
-		{ { ShaderType::vertex, "EDAF80/normal.vert" },
-		  { ShaderType::fragment, "EDAF80/normal.frag" } },
-		normal_shader);
-	if (normal_shader == 0u)
-		LogError("Failed to load normal shader");
-
-	GLuint texcoord_shader = 0u;
-	program_manager.CreateAndRegisterProgram("Texture coords",
-		{ { ShaderType::vertex, "EDAF80/texcoord.vert" },
-		  { ShaderType::fragment, "EDAF80/texcoord.frag" } },
-		texcoord_shader);
-	if (texcoord_shader == 0u)
-		LogError("Failed to load textcoord shader");
-
 	GLuint skybox_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Skybox",
 		{ { ShaderType::vertex, "EDAF80/skybox.vert" },
 		  { ShaderType::fragment, "EDAF80/skybox.frag" } },
 		skybox_shader
 	);
-
-	if (texcoord_shader == 0u)
-		LogError("Failed to load textcoord shader");
+	if (skybox_shader == 0u)
+		LogError("Failed to load skybox shader");
 
 	//tuna shader
 	GLuint tuna_shader = 0u;
@@ -122,7 +96,7 @@ edaf80::Assignment5::run()
 		  { ShaderType::fragment, "EDAF80/shark.frag" } },
 		shark_shader
 	);
-	if (submarine_shader == 0u)
+	if (shark_shader == 0u)
 		LogError("Failed to load shark shader");
 	
 
@@ -130,32 +104,12 @@ edaf80::Assignment5::run()
 	auto const set_uniforms = [&light_position](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position)); };
 
-	//
-	// Todo: Insert the creation of other shader programs.
-	//       (Check how it was done in assignment 3.)
-	//
-
-	//
-	// Todo: Load your geometry
-	//
-	//
-	//
-	//
+	//Skybox
 	auto skybox_shape = parametric_shapes::createSphere(100.0f, 1000u, 1000u);
 	if (skybox_shape.vao == 0u) {
 		LogError("Failed to retrieve the mesh for the skybox");
 		return;
 	}
-
-	//Test
-	auto test_point = parametric_shapes::createSphere(1.0f, 10u, 10u);
-	if (test_point.vao == 0u) {
-		LogError("Failed to retrieve the mesh for the test point");
-		return;
-	}
-	Node test;
-	test.set_geometry(test_point);
-	//End test
 
 	GLuint const skybox_texture = bonobo::loadTextureCubeMap(
 		config::resources_path("cubemaps/Underwater/uw_ft_posx.jpg"),
@@ -172,6 +126,16 @@ edaf80::Assignment5::run()
 	skybox.add_texture("skybox_texture", skybox_texture, GL_TEXTURE_CUBE_MAP);
 	skybox.set_program(&skybox_shader, set_uniforms);
 
+	//Test point shape
+	auto test_point = parametric_shapes::createSphere(1.0f, 10u, 10u);
+	if (test_point.vao == 0u) {
+		LogError("Failed to retrieve the mesh for the test point");
+		return;
+	}
+	Node test;
+	test.set_geometry(test_point);
+	//End test
+
 	//Tuna
 	bonobo::material_data tuna_material;
 	tuna_material.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
@@ -184,6 +148,18 @@ edaf80::Assignment5::run()
 	GLuint const tuna_body_diff = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_diff.png"), true);
 	GLuint const tuna_body_rough = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_rough.png"), true);
 	GLuint const tuna_body_normal = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_normal.png"), true);
+
+	std::vector <glm::vec3> tuna_locations = {
+	glm::vec3(10.0f,  10.0f,  15.0f),
+	glm::vec3(20.0f,  25.0f,  10.0f),
+	glm::vec3(22.0f,  12.0f,  10.0f),
+	glm::vec3(20.0f,  15.0f,  20.0f),
+	glm::vec3(25.0f,  10.0f,  15.0f),
+	glm::vec3(-20.0f, -18.0f,  18.0f),
+	glm::vec3(-25.0f, -15.0f, -20.0f),
+	glm::vec3(-20.0f, -28.0f, -20.0f),
+	glm::vec3(-23.0f, -18.0f, -24.0f)
+	};
 
 	Node tuna;
 	tuna.set_geometry(tuna_model.at(0));
@@ -233,7 +209,7 @@ edaf80::Assignment5::run()
 	shark.add_texture("shark_rough", shark_rough, GL_TEXTURE_2D);
 	shark.add_texture("shark_normal", shark_normal, GL_TEXTURE_2D);
 	shark.set_material_constants(shark_material);
-	shark.get_transform().SetScale(0.5f);
+	shark.get_transform().SetScale(0.3f);
 	//End shark
 
 	//Treasure
@@ -272,39 +248,11 @@ edaf80::Assignment5::run()
 	GLuint const coin_normal = bonobo::loadTexture2D(config::resources_path("textures/treasure/coin_normal.png"), true);
 	//End coin
 
-	//Control points
-	//auto const control_point_sphere = parametric_shapes::createSphere(0.1f, 10u, 10u);
-	std::vector <glm::vec3> control_point_locations = {
-		glm::vec3(10.0f,  10.0f,  10.0f),
-		glm::vec3(10.0f,  18.0f,  10.0f),
-		glm::vec3(20.0f,  12.0f,  20.0f),
-		glm::vec3(20.0f,  15.0f,  20.0f),
-		glm::vec3(15.0f,  0.0f,  15.0f),
-		glm::vec3(-20.0f, -10.0f,  15.0f),
-		glm::vec3(-15.0f, -15.0f, -15.0f),
-		glm::vec3(-20.0f, -12.0f, -20.0f),
-		glm::vec3(-10.0f, -18.0f, -10.0f)
-	};
-
-	std::array<Node, 9> control_points;
-	for (std::size_t i = 0; i < control_point_locations.size(); ++i) {
-		auto& control_point = control_points[i];
-		control_point.set_geometry(coin_model.at(0));
-		control_point.set_program(&diffuse_shader, set_uniforms);
-		control_point.get_transform().SetTranslate(control_point_locations[i]);
-		control_point.set_material_constants(coin_material);
-	}
-	//End control points
-	
-	
-
 	glClearDepthf(1.0f);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 
 
-	float elapsed_time_s = 0.0f;
-	bool pause_animation = false;
 	bool use_orbit_camera = false;
 	auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -321,14 +269,69 @@ edaf80::Assignment5::run()
 	bool interpolate = false;
 	bool show_control_points = true;
 
+	int iRotationCnt = 0;
+	int iCollisionCnt = 0;
+	float const fSharkCollRadius = 1.0f;
+	float const fTunaCollRadius = 1.0f;
+	float const fCoinCollRadius = 1.0f;
+	float const fSubMarineCollRadius = 1.0f;
+	float const fTreasureCollRadius = 1.0f;
+	bool circularMovementSet = false;
+
+	float elapsed_time_s = 0.0f;
+	float delta_time_s = 0.0f;
+	bool pause_animation = false;
+
+	auto const coin_set_uniforms =
+		[&light_position, &camera_position, &coin_material, &elapsed_time_s](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(coin_material.ambient));
+		glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(coin_material.diffuse));
+		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(coin_material.specular));
+		glUniform1f(glGetUniformLocation(program, "shininess"), coin_material.shininess);
+		glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
+		};
+
+	std::vector <glm::vec3> coin_locations = {
+		glm::vec3(10.0f,  10.0f,  10.0f),
+		glm::vec3(10.0f,  18.0f,  10.0f),
+		glm::vec3(20.0f,  12.0f,  20.0f),
+		glm::vec3(20.0f,  15.0f,  20.0f),
+		glm::vec3(15.0f,  0.0f,  15.0f),
+		glm::vec3(-20.0f, -10.0f,  15.0f),
+		glm::vec3(-15.0f, -15.0f, -15.0f),
+		glm::vec3(-20.0f, -12.0f, -20.0f),
+		glm::vec3(-10.0f, -18.0f, -10.0f)
+	};
+
+	std::array<Node, 9> coins;
+	for (std::size_t i = 0; i < coin_locations.size(); ++i) {
+		auto& coin = coins[i];
+		coin.set_geometry(coin_model.at(0));
+		coin.get_transform().SetTranslate(coin_locations[i]);
+		coin.set_material_constants(coin_material);
+		coin.add_texture("coin_diff", coin_diff, GL_TEXTURE_2D);
+		coin.add_texture("coin_spec", coin_rough, GL_TEXTURE_2D);
+		coin.add_texture("coin_normal", coin_normal, GL_TEXTURE_2D);
+		coin.set_program(&shark_shader, coin_set_uniforms);
+	}
+	//End control points
+	GameState gameState = PLAY;
+
 	while (!glfwWindowShouldClose(window)) {
+		float fMovingSpeed = 0.1f;
+		float Pi = 3.14f;
+		float fMovingRotAngle = Pi / 8;
+
+		auto& io = ImGui::GetIO();
 		auto const nowTime = std::chrono::high_resolution_clock::now();
 		auto const deltaTimeUs = std::chrono::duration_cast<std::chrono::microseconds>(nowTime - lastTime);
 		lastTime = nowTime;
 		if (!pause_animation) {
+			delta_time_s = std::chrono::duration<float>(deltaTimeUs).count();
 			elapsed_time_s += std::chrono::duration<float>(deltaTimeUs).count();
 		}
-
 		//tuna uniform
 		auto const tuna_set_uniforms =
 			[&use_normal_mapping, &light_position, &camera_position, &tuna_material, &elapsed_time_s](GLuint program) {
@@ -385,137 +388,164 @@ edaf80::Assignment5::run()
 			};
 		treasure.set_program(&shark_shader, treasure_set_uniforms);
 
-		auto& io = ImGui::GetIO();
-		inputHandler.SetUICapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
-
-		glfwPollEvents();
-		inputHandler.Advance();
-		mCamera.Update(deltaTimeUs, inputHandler);
-		if (use_orbit_camera) {
-			mCamera.mWorld.LookAt(glm::vec3(0.0f));
-		}
-		camera_position = mCamera.mWorld.GetTranslation();
-
-		if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
-			shader_reload_failed = !program_manager.ReloadAllPrograms();
-			if (shader_reload_failed)
-				tinyfd_notifyPopup("Shader Program Reload Error",
-				                   "An error occurred while reloading shader programs; see the logs for details.\n"
-				                   "Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
-				                   "error");
-		}
-		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
-			show_logs = !show_logs;
-		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
-			show_gui = !show_gui;
-		if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
-			mWindowManager.ToggleFullscreenStatusForWindow(window);
-
-
-		// Retrieve the actual framebuffer size: for HiDPI monitors,
-		// you might end up with a framebuffer larger than what you
-		// actually asked for. For example, if you ask for a 1920x1080
-		// framebuffer, you might get a 3840x2160 one instead.
-		// Also it might change as the user drags the window between
-		// monitors with different DPIs, or if the fullscreen status is
-		// being toggled.
-		int framebuffer_width, framebuffer_height;
-		glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
-		glViewport(0, 0, framebuffer_width, framebuffer_height);
-
-
-		//
-		// Todo: If you need to handle inputs, you can do it here
-		//
-
-		float fMovingSpeed = 0.1f;
-		//Left turn
-		if ( (inputHandler.GetKeycodeState(GLFW_KEY_LEFT) & JUST_PRESSED) || (inputHandler.GetKeycodeState(GLFW_KEY_LEFT) & PRESSED) )
+		switch (gameState)
 		{
-			glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-			SubNewLoc.x -= fMovingSpeed;
-			submarine.get_transform().SetTranslate(SubNewLoc);
-		}
+		case MENU:
+			break;
 
-		//Right turn
-		if ( (inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & JUST_PRESSED) || (inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & PRESSED) )
-		{
-			glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-			SubNewLoc.x += fMovingSpeed;
-			submarine.get_transform().SetTranslate(SubNewLoc);
-		}
+		case PLAY:
+			inputHandler.SetUICapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
+			glfwPollEvents();
+			inputHandler.Advance();
+			mCamera.Update(deltaTimeUs, inputHandler, true, true);
 
-		//Up
-		if ( (inputHandler.GetKeycodeState(GLFW_KEY_UP) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_UP) & PRESSED) )
-		{
-			glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-			SubNewLoc.y += fMovingSpeed;
-			submarine.get_transform().SetTranslate(SubNewLoc);
-		}
+			glm::vec3 SubmarineLoc = submarine.get_transform().GetTranslation();
+			glm::vec3 SubLocOffset = glm::vec3(0.0f, 3.0f, 5.0f);
+			light_position = SubmarineLoc + SubLocOffset;
+			mCamera.mWorld.SetTranslate(SubmarineLoc + SubLocOffset);
+			mCamera.mWorld.LookAt(SubmarineLoc - SubLocOffset);
+			
+			if (use_orbit_camera) {
+				mCamera.mWorld.LookAt(glm::vec3(0.0f));
+			}
+			camera_position = mCamera.mWorld.GetTranslation();
 
-		//Down
-		if ( (inputHandler.GetKeycodeState(GLFW_KEY_DOWN) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_DOWN) & PRESSED) )
-		{
-			glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-			SubNewLoc.y -= fMovingSpeed;
-			submarine.get_transform().SetTranslate(SubNewLoc);
-		}
+			if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
+				shader_reload_failed = !program_manager.ReloadAllPrograms();
+				if (shader_reload_failed)
+					tinyfd_notifyPopup("Shader Program Reload Error",
+						"An error occurred while reloading shader programs; see the logs for details.\n"
+						"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
+						"error");
+			}
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
+				show_logs = !show_logs;
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
+				show_gui = !show_gui;
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
+				mWindowManager.ToggleFullscreenStatusForWindow(window);
 
-		//forward
-		if ( (inputHandler.GetKeycodeState(GLFW_KEY_W) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_W) & PRESSED) )
-		{
-			glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-			SubNewLoc.z -= fMovingSpeed;
-			submarine.get_transform().SetTranslate(SubNewLoc);
-		}
+			int framebuffer_width, framebuffer_height;
+			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+			glViewport(0, 0, framebuffer_width, framebuffer_height);
 
-		//backward
-		if ( (inputHandler.GetKeycodeState(GLFW_KEY_S) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_S) & PRESSED) )
-		{
-			glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-			SubNewLoc.z += fMovingSpeed;
-			submarine.get_transform().SetTranslate(SubNewLoc);
-		}
+			//Left turn
+			if ((inputHandler.GetKeycodeState(GLFW_KEY_LEFT) & JUST_PRESSED) || (inputHandler.GetKeycodeState(GLFW_KEY_LEFT) & PRESSED))
+			{
 
-		mWindowManager.NewImGuiFrame();
+				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
+				SubNewLoc.x -= fMovingSpeed;
+				submarine.get_transform().SetTranslate(SubNewLoc);
+				if (iRotationCnt == 0)
+				{
+					submarine.get_transform().RotateZ(-fMovingRotAngle);
+					++iRotationCnt;
+				}
 
-		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-		bonobo::changePolygonMode(polygon_mode);
+			}
+			if ((inputHandler.GetKeycodeState(GLFW_KEY_LEFT) & JUST_RELEASED))
+			{
+				submarine.get_transform().RotateZ(fMovingRotAngle);
+				iRotationCnt = 0;
+			}
 
-		if (!shader_reload_failed) {
-			//
-			// Todo: Render all your geometry here.
-			//
-			if (show_control_points){
-				for (auto const& control_point : control_points) {
-					control_point.render(mCamera.GetWorldToClipMatrix());
+			//Right turn
+			if ((inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & JUST_PRESSED) || (inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & PRESSED))
+			{
+				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
+				SubNewLoc.x += fMovingSpeed;
+				submarine.get_transform().SetTranslate(SubNewLoc);
+				if (iRotationCnt == 0)
+				{
+					submarine.get_transform().RotateZ(fMovingRotAngle);
+					++iRotationCnt;
 				}
 			}
-			
-			skybox.render(mCamera.GetWorldToClipMatrix());
+			if ( (inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & JUST_RELEASED))
+			{
+				submarine.get_transform().RotateZ(-fMovingRotAngle);
+				iRotationCnt = 0;
+			}
 
-			tuna.render(mCamera.GetWorldToClipMatrix());
-			tuna.get_transform().SetTranslate(glm::vec3(2.0f, 2.0f, 2.0f));
+			//Up
+			if ((inputHandler.GetKeycodeState(GLFW_KEY_UP) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_UP) & PRESSED))
+			{
+				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
+				SubNewLoc.y += fMovingSpeed;
+				submarine.get_transform().SetTranslate(SubNewLoc);
+			}
 
-			submarine.render(mCamera.GetWorldToClipMatrix());
+			//Down
+			if ((inputHandler.GetKeycodeState(GLFW_KEY_DOWN) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_DOWN) & PRESSED))
+			{
+				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
+				SubNewLoc.y -= fMovingSpeed;
+				submarine.get_transform().SetTranslate(SubNewLoc);
+			}
 
-			shark.render(mCamera.GetWorldToClipMatrix());
-			shark.get_transform().SetTranslate(glm::vec3(-2.0f, -2.0f, -2.0f));
+			//forward
+			if ((inputHandler.GetKeycodeState(GLFW_KEY_W) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_W) & PRESSED))
+			{
+				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
+				SubNewLoc.z -= fMovingSpeed;
+				submarine.get_transform().SetTranslate(SubNewLoc);
+			}
 
-			treasure.render(mCamera.GetWorldToClipMatrix());
-			treasure.get_transform().SetTranslate(glm::vec3(0.0f, -5.0f, 0.0f));
-			
-			
-			edaf80::Assignment5::moveObject(tuna, control_point_locations, 5.0f, elapsed_time_s, CIRCULAR);
+			//backward
+			if ((inputHandler.GetKeycodeState(GLFW_KEY_S) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_S) & PRESSED))
+			{
+				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
+				SubNewLoc.z += fMovingSpeed;
+				submarine.get_transform().SetTranslate(SubNewLoc);
+			}
 
-			auto const test_set_uniforms = [&light_position, &elapsed_time_s](GLuint program) {
-				glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
-				glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
-				};
+			mWindowManager.NewImGuiFrame();
+
+			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+			bonobo::changePolygonMode(polygon_mode);
+
+			if (!shader_reload_failed) {
+				//
+				// Todo: Render all your geometry here.
+				//
+				if (show_control_points) {
+					for (auto const& _coin : coins) {
+						_coin.render(mCamera.GetWorldToClipMatrix());
+					}
+				}
+
+				skybox.render(mCamera.GetWorldToClipMatrix());
+				tuna.render(mCamera.GetWorldToClipMatrix());
+				tuna.get_transform().SetTranslate(glm::vec3(2.0f, 2.0f, 2.0f));
+
+				submarine.render(mCamera.GetWorldToClipMatrix());
+				
+
+				shark.render(mCamera.GetWorldToClipMatrix());
+				shark.get_transform().SetTranslate(glm::vec3(-2.0f, -2.0f, -2.0f));
+
+				treasure.render(mCamera.GetWorldToClipMatrix());
+				treasure.get_transform().SetTranslate(glm::vec3(0.0f, -5.0f, 0.0f));
+
+				edaf80::Assignment5::moveObjectCircular(tuna, Pi/10 , CLOCKWISE , elapsed_time_s);
+				//edaf80::Assignment5::moveObjectLinear(tuna, 0.1f, glm::vec3(1.0f, 0.0f, 1.0f), elapsed_time_s);
+				edaf80::Assignment5::moveObjectCircular(shark, Pi / 10, CLOCKWISE, elapsed_time_s);
+				iCollisionCnt += edaf80::Assignment5::collisionCount(submarine, tuna, fSharkCollRadius, fTunaCollRadius);
+
+			}
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			break;
+
+		case WIN:
+			break;
+
+		case LOSE:
+			break;
+
+		case EXIT:
+			break;
 		}
-
-
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		//
 		// Todo: If you want a custom ImGUI window, you can set it up
@@ -551,6 +581,47 @@ edaf80::Assignment5::run()
 	}
 }
 
+void edaf80::Assignment5::moveObjectCircular(Node& Object, float Omega, enum CircularMovement direction, float elapsed_time_s)
+{
+	float pi = 3.14f;
+	glm::vec3 newLoc;
+
+	glm::vec3 ObjectLoc = Object.get_transform().GetTranslation();
+	float vecLen = sqrt( pow(ObjectLoc.x,2) + pow(ObjectLoc.y, 2) + pow(ObjectLoc.z, 2) );
+	newLoc = glm::vec3(vecLen * cos(Omega * elapsed_time_s), ObjectLoc.y, vecLen * sin(Omega * elapsed_time_s));
+	Object.get_transform().LookAt(newLoc);
+	Object.get_transform().RotateY((pi + Omega) / 2);
+	Object.get_transform().SetTranslate(newLoc);
+	
+}
+
+void edaf80::Assignment5::moveObjectLinear(Node& Object, float movingSpeed, glm::vec3 MovingDirection, float elapsed_time_s)
+{
+	float pi = 3.14f;
+	glm::vec3 newLoc;
+
+	glm::vec3 ObjectLoc = Object.get_transform().GetTranslation();
+	newLoc = ObjectLoc + movingSpeed * elapsed_time_s * normalize(MovingDirection);
+	Object.get_transform().LookAt(newLoc);
+	Object.get_transform().RotateY(pi);
+	Object.get_transform().SetTranslate(newLoc);
+}
+
+int edaf80::Assignment5::collisionCount(Node& Object1, Node& Object2, float ObjCollRadius1, float ObjCollRadius2)
+{
+	int iCollCnt = 0;
+	glm::vec3 ObjLoc1 = Object1.get_transform().GetTranslation();
+	glm::vec3 ObjLoc2 = Object2.get_transform().GetTranslation();
+
+	glm::vec3 distVec = ObjLoc2 - ObjLoc1;
+	float collDist = sqrt(pow(distVec.x, 2) + pow(distVec.y, 2) + pow(distVec.z, 2) );
+	if (collDist < (ObjCollRadius1 + ObjCollRadius2))
+	{
+		++iCollCnt;
+	}
+	return iCollCnt;
+}
+
 int main()
 {
 	std::setlocale(LC_ALL, "");
@@ -560,45 +631,8 @@ int main()
 	try {
 		edaf80::Assignment5 assignment5(framework.GetWindowManager());
 		assignment5.run();
-	} catch (std::runtime_error const& e) {
+	}
+	catch (std::runtime_error const& e) {
 		LogError(e.what());
 	}
-}
-
-void edaf80::Assignment5::moveObject(Node& Object, const std::vector<glm::vec3>& _control_point_locations,
-									float duration_s, float elapsed_time_s, MovingStyle movingStyle)
-{
-	float pi = 3.14f;
-	
-	
-	glm::vec3 newLoc;
-	int i = 0;
-
-	if (CONTROL_POINTS == movingStyle)
-	{
-		int numb_cp = _control_point_locations.size();
-		float x = fmod(elapsed_time_s, duration_s);
-		int index = static_cast<int> (elapsed_time_s / duration_s);
-		float catmull_rom_tension = 0.5f;
-
-		glm::vec3 p0 = _control_point_locations[index % numb_cp];
-		glm::vec3 p1 = _control_point_locations[(index + 1) % numb_cp];
-		glm::vec3 p2 = _control_point_locations[(index + 2) % numb_cp];
-		glm::vec3 p3 = _control_point_locations[(index + 3) % numb_cp];
-		newLoc = interpolation::evalCatmullRom(p0, p1, p2, p3, catmull_rom_tension, x);
-		Object.get_transform().SetTranslate(newLoc);
-	}
-
-	else if (CIRCULAR == movingStyle)
-	{
-		float movingSpd = pi / 10;
-		glm::vec3 ObjectLoc = Object.get_transform().GetTranslation();
-		float vecLen = sqrt(pow(ObjectLoc.x, 2) + pow(ObjectLoc.y, 2) + pow(ObjectLoc.z, 2));
-		newLoc = glm::vec3(vecLen * cos(movingSpd * elapsed_time_s), ObjectLoc.y, vecLen * sin(movingSpd * elapsed_time_s));
-		Object.get_transform().SetTranslate(newLoc);
-
-		glm::vec3 DirectionVec = normalize(newLoc - ObjectLoc);
-		Object.get_transform().LookTowards(DirectionVec);
-	}
-	
 }
