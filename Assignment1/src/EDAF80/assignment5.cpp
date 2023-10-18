@@ -106,7 +106,7 @@ edaf80::Assignment5::run()
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position)); };
 
 	//Skybox
-	auto skybox_shape = parametric_shapes::createSphere(150.0f, 1000u, 1000u);
+	auto skybox_shape = parametric_shapes::createSphere(100.0f, 1000u, 1000u);
 	if (skybox_shape.vao == 0u) {
 		LogError("Failed to retrieve the mesh for the skybox");
 		return;
@@ -141,12 +141,12 @@ edaf80::Assignment5::run()
 	GLuint const tuna_body_rough = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_rough.png"), true);
 	GLuint const tuna_body_normal = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_normal.png"), true);
 
-	Node tuna;
-	tuna.set_geometry(tuna_model.at(0));
-	tuna.add_texture("tuna_body_diff", tuna_body_diff, GL_TEXTURE_2D);
-	tuna.add_texture("tuna_body_rough", tuna_body_rough, GL_TEXTURE_2D);
-	tuna.add_texture("tuna_body_normal", tuna_body_normal, GL_TEXTURE_2D);
-	tuna.set_material_constants(tuna_material);
+	//Node tuna;
+	//tuna.set_geometry(tuna_model.at(0));
+	//tuna.add_texture("tuna_body_diff", tuna_body_diff, GL_TEXTURE_2D);
+	//tuna.add_texture("tuna_body_rough", tuna_body_rough, GL_TEXTURE_2D);
+	//tuna.add_texture("tuna_body_normal", tuna_body_normal, GL_TEXTURE_2D);
+	//tuna.set_material_constants(tuna_material);
 
 	//Submarine
 	bonobo::material_data submarine_material;
@@ -183,13 +183,13 @@ edaf80::Assignment5::run()
 	GLuint const shark_rough = bonobo::loadTexture2D(config::resources_path("textures/shark/shark_rough.png"), true);
 	GLuint const shark_normal = bonobo::loadTexture2D(config::resources_path("textures/shark/shark_normal.png"), true);
 
-	Node shark;
-	shark.set_geometry(shark_model.at(0));
-	shark.add_texture("shark_diff", shark_diff, GL_TEXTURE_2D);
-	shark.add_texture("shark_rough", shark_rough, GL_TEXTURE_2D);
-	shark.add_texture("shark_normal", shark_normal, GL_TEXTURE_2D);
-	shark.set_material_constants(shark_material);
-	shark.get_transform().SetScale(0.3f);
+	//Node shark;
+	//shark.set_geometry(shark_model.at(0));
+	//shark.add_texture("shark_diff", shark_diff, GL_TEXTURE_2D);
+	//shark.add_texture("shark_rough", shark_rough, GL_TEXTURE_2D);
+	//shark.add_texture("shark_normal", shark_normal, GL_TEXTURE_2D);
+	//shark.set_material_constants(shark_material);
+	//shark.get_transform().SetScale(0.3f);
 	//End shark
 
 	//Treasure
@@ -268,11 +268,12 @@ edaf80::Assignment5::run()
 	std::vector<Node> tunas;
 	std::vector<Node> sharks;
 	std::vector<Node> rewards;
-	const int iMaxNumberofCoins = 20;
-	const int iMaxNumberofTunas = 20;
+	const int iMaxNumberofCoins = 100;
+	const int iMaxNumberofTunas = 30;
 	const int iMaxNumberofSharks = 20;
-	const int iGameRadius = 50;
+	const int iGameRadius = 90;
 	int iRewardCounter = 0;
+	int iEngineCounter = 5;
 
 	auto const coin_set_uniforms =
 		[&light_position, &camera_position, &coin_material, &elapsed_time_s](GLuint program) {
@@ -332,7 +333,7 @@ edaf80::Assignment5::run()
 		_shark.add_texture("shark_rough", shark_rough, GL_TEXTURE_2D);
 		_shark.add_texture("shark_normal", shark_normal, GL_TEXTURE_2D);
 		_shark.set_material_constants(shark_material);
-		_shark.get_transform().SetScale(0.3f);
+		_shark.get_transform().SetScale(0.5f);
 		_shark.get_transform().SetTranslate(shark_location);
 		sharks.push_back(_shark);
 	}
@@ -347,7 +348,9 @@ edaf80::Assignment5::run()
 		fSharkMovingSpeed.push_back((rand() % 5) * (Pi / 30));
 	}
 
-	
+	//Initial treasure position
+	glm::vec3 TreasurePosition = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius));
+
 	GameState gameState = PLAY;
 	while (!glfwWindowShouldClose(window)) {
 		
@@ -379,7 +382,7 @@ edaf80::Assignment5::run()
 			glUniform1f(glGetUniformLocation(program, "shininess"), tuna_material.shininess);
 			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
 			};
-		tuna.set_program(&tuna_shader, tuna_set_uniforms);
+		//tuna.set_program(&tuna_shader, tuna_set_uniforms);
 
 		//submarine uniform
 		auto const submarine_set_uniforms =
@@ -407,7 +410,7 @@ edaf80::Assignment5::run()
 			glUniform1f(glGetUniformLocation(program, "shininess"), shark_material.shininess);
 			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
 			};
-		shark.set_program(&shark_shader, shark_set_uniforms);
+		//shark.set_program(&shark_shader, shark_set_uniforms);
 
 		//treasure uniform
 		auto const treasure_set_uniforms =
@@ -423,18 +426,40 @@ edaf80::Assignment5::run()
 			};
 		treasure.set_program(&shark_shader, treasure_set_uniforms);
 
+		inputHandler.SetUICapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
+		glfwPollEvents();
+		inputHandler.Advance();
+		mCamera.Update(deltaTimeUs, inputHandler, false, false);
+
 		switch (gameState)
 		{
 		case MENU:
+			
+			if (inputHandler.GetKeycodeState(GLFW_KEY_Q) & JUST_PRESSED)
+			{
+				//Press Q to start
+				gameState = PLAY;
+			}
+
+			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
+			{
+				//Press space to start
+				gameState = EXIT;
+			}
 			break;
 
 		case PLAY:
-			inputHandler.SetUICapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
-			glfwPollEvents();
-			inputHandler.Advance();
-			mCamera.Update(deltaTimeUs, inputHandler, true, false);
 
-			
+			if (inputHandler.GetKeycodeState(GLFW_KEY_SPACE) & JUST_PRESSED)
+			{
+				//Press space to start
+				gameState = MENU;
+			}
+			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
+			{
+				//Press space to start
+				gameState = EXIT;
+			}
 
 			glm::vec3 SubmarineLoc = submarine.get_transform().GetTranslation();
 			glm::vec3 SubLocOffset = glm::vec3(0.0f, 2.0f, -5.0f);
@@ -486,31 +511,6 @@ edaf80::Assignment5::run()
 				submarine.get_transform().RotateZ(fMovingRotAngle);
 				iRotationCnt = 0;
 			}
-
-			////Rotate left (Pi/10)
-			//if ((inputHandler.GetKeycodeState(GLFW_KEY_A) & JUST_PRESSED) || (inputHandler.GetKeycodeState(GLFW_KEY_A) & PRESSED))
-			//{
-
-			//	/*glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-			//	SubNewLoc.x += fMovingSpeed;
-			//	submarine.get_transform().SetTranslate(SubNewLoc);
-			//	if (iRotationCnt == 0)
-			//	{
-			//		submarine.get_transform().RotateZ(-fMovingRotAngle);
-			//		++iRotationCnt;
-			//	}*/
-			//	submarine.get_transform().RotateY(-Pi/10);
-			//	if (iRotationCnt == 0)
-			//	{
-			//		submarine.get_transform().RotateZ(-fMovingRotAngle);
-			//		++iRotationCnt;
-			//	}
-			//}
-			//if ((inputHandler.GetKeycodeState(GLFW_KEY_A) & JUST_RELEASED))
-			//{
-			//	submarine.get_transform().RotateZ(fMovingRotAngle);
-			//	iRotationCnt = 0;
-			//}
 
 			//Right turn
 			if ((inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & JUST_PRESSED) || (inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & PRESSED))
@@ -568,26 +568,23 @@ edaf80::Assignment5::run()
 			bonobo::changePolygonMode(polygon_mode);
 
 			if (!shader_reload_failed) {
-				//
-				// Todo: Render all your geometry here.
-				//
 
 				skybox.render(mCamera.GetWorldToClipMatrix());
 				submarine.render(mCamera.GetWorldToClipMatrix());
-				/*tuna.render(mCamera.GetWorldToClipMatrix());
-				tuna.get_transform().SetTranslate(glm::vec3(2.0f, 2.0f, 2.0f));*/
+
 
 				for (int i = 0; i < rewards.size(); i++)
 				{
-					if (0 == edaf80::Assignment5::collisionCount(submarine, rewards.at(i), 0.5f, 0.5f))
+					if (0 == edaf80::Assignment5::collisionCount(submarine, rewards.at(i), 1.0f, 1.0f))
 					{
 						rewards.at(i).render(mCamera.GetWorldToClipMatrix());
 						rewards.at(i).get_transform().RotateY(Pi / 20);
 					}
 					else
 					{
-						iRewardCounter++; //Stop render the coin at collision and increase point counter
-						rewards.at(i).get_transform().SetTranslate(glm::vec3((rand() % 30), (rand() % 30), (rand() % 30)));
+						iRewardCounter++; //Stop render the coin at collision
+						rewards.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius))); //replace with a new coin
+						std::cout << "Point count " << iRewardCounter << "\n";
 					}
 				}
 				
@@ -597,56 +594,80 @@ edaf80::Assignment5::run()
 					tunas.at(i).render(mCamera.GetWorldToClipMatrix());
 					//edaf80::Assignment5::moveObjectCircular(tunas.at(i), fTunaMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
 					
-					if (0 == edaf80::Assignment5::collisionCount(submarine, tunas.at(i), 1.0f, 1.0f))
+					if (1 == edaf80::Assignment5::collisionCount(submarine, tunas.at(i), 1.0f, 1.0f))
 					{
-						//tbd
-					}
-					else
-					{
-						//tbd
+						iRewardCounter--; //Reduce points if hit tuna and shift the sub away toward collision direction
+						if (iRewardCounter == 0)
+						{
+							iEngineCounter--; //if point is 0, destroy engine instead
+						}
+						glm::vec3 subLoc = submarine.get_transform().GetTranslation();
+						glm::vec3 tunaLoc = tunas.at(i).get_transform().GetTranslation();
+						glm::vec3 CollisionVec = tunaLoc - subLoc;
+						submarine.get_transform().SetTranslate(subLoc + 3.0f * CollisionVec);//Move the sub to safe distance
 					}
 				}
-				edaf80::Assignment5::moveObjectCircular(tunas.at(0), fTunaMovingSpeed.at(0), fTunaMovingRadius.at(0), CLOCKWISE, elapsed_time_s);
 
 				for (int i = 0; i < sharks.size(); i++)
 				{
 					sharks.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 					sharks.at(i).render(mCamera.GetWorldToClipMatrix());
 					//edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
-					if (0 == edaf80::Assignment5::collisionCount(submarine, sharks.at(i), 1.0f, 1.0f))
+					if (1 == edaf80::Assignment5::collisionCount(submarine, sharks.at(i), 1.0f, 1.0f))
 					{
-						//tbd
-					}
-					else
-					{
-						//iRewardCounter++; //Stop render the coin at collision and increase point counter
-						submarine.get_transform().SetTranslate(glm::vec3(0.0f)); //Reduce life and back to the origin
+						iEngineCounter--; //Reduce points if hit tuna and shift the sub away toward collision direction
+						std::cout << "Engine count " << iEngineCounter << "\n";
+						glm::vec3 subLoc = submarine.get_transform().GetTranslation();
+						glm::vec3 sharkLoc = sharks.at(i).get_transform().GetTranslation();
+						glm::vec3 CollisionVec = sharkLoc - subLoc;
+						submarine.get_transform().SetTranslate(subLoc + 3.0f * CollisionVec); //Move the sub to safe distance
+
+						if (iEngineCounter == 0)
+						{
+							//LOSE and return point count
+							std::cout << "YOU LOSE! Point count " << iRewardCounter << "\n";
+							//gameState = LOSE;
+						}
 					}
 				}
 
-				/*shark.render(mCamera.GetWorldToClipMatrix());
-				shark.get_transform().SetTranslate(glm::vec3(-2.0f, -2.0f, -2.0f));*/
+				//Render the treasure after playing for 3min
+				if (elapsed_time_s > 180.0f)
+				{
+					treasure.render(mCamera.GetWorldToClipMatrix());
+					treasure.get_transform().SetTranslate(TreasurePosition);
+				}
 
-				treasure.render(mCamera.GetWorldToClipMatrix());
-				treasure.get_transform().SetTranslate(glm::vec3(0.0f, -5.0f, 0.0f));
-
-				//edaf80::Assignment5::moveObjectCircular(tuna, Pi/10, 20 , CLOCKWISE, elapsed_time_s);
-				////edaf80::Assignment5::moveObjectLinear(tuna, 0.1f, glm::vec3(1.0f, 0.0f, 1.0f), elapsed_time_s);
-				//edaf80::Assignment5::moveObjectCircular(shark, Pi/10, 20 , CLOCKWISE, elapsed_time_s);
-				//iCollisionCnt += edaf80::Assignment5::collisionCount(submarine, tuna, fSharkCollRadius, fTunaCollRadius);
-
+				if (1 == edaf80::Assignment5::collisionCount(submarine, treasure, 1.0f, 1.0f))
+				{
+					//Win and return point count
+					std::cout << "YOU WIN! Point count " << iRewardCounter << "\n";
+					//gameState = WIN;
+				}
 			}
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			break;
 
 		case WIN:
+
+			//Reset counter to default
+			iRewardCounter = 0;
+			iEngineCounter = 5;
 			break;
 
 		case LOSE:
+
+			//Reset counter to default
+			iRewardCounter = 0;
+			iEngineCounter = 5;
 			break;
 
 		case EXIT:
+
+			//Reset counter to default
+			iRewardCounter = 0;
+			iEngineCounter = 5;
 			break;
 		}
 
@@ -657,20 +678,7 @@ edaf80::Assignment5::run()
 		bool const opened = ImGui::Begin("Scene Controls", nullptr, ImGuiWindowFlags_None);
 		if (opened) {
 			ImGui::Checkbox("Show basis", &show_basis);
-			ImGui::Checkbox("Use normal mapping", &use_normal_mapping);
-			ImGui::SliderFloat("Basis thickness scale", &basis_thickness_scale, 0.0f, 100.0f);
-			ImGui::SliderFloat("Basis length scale", &basis_length_scale, 0.0f, 100.0f);
-			auto const cull_mode_changed = bonobo::uiSelectCullMode("Cull mode", cull_mode);
-			if (cull_mode_changed) {
-				changeCullMode(cull_mode);
-			}
-			bonobo::uiSelectPolygonMode("Polygon mode", polygon_mode);
 			ImGui::Checkbox("Pause animation", &pause_animation);
-			ImGui::Checkbox("Enable interpolation", &interpolate);
-			ImGui::Checkbox("Show control points", &show_control_points);
-			bonobo::uiSelectPolygonMode("Polygon mode", polygon_mode);
-			ImGui::Separator();
-			ImGui::SliderFloat3("Light Position", glm::value_ptr(light_position), -20.0f, 20.0f);
 		}
 		ImGui::End();
 
@@ -698,7 +706,7 @@ void edaf80::Assignment5::moveObjectCircular(Node& Object, float Omega, float Ra
 	}
 	newLoc = glm::vec3(vecLen * cos(Omega * elapsed_time_s), ObjectLoc.y, vecLen * sin(Omega * elapsed_time_s));
 	Object.get_transform().LookAt(newLoc);
-	Object.get_transform().RotateY((pi + Omega) / 2);
+	Object.get_transform().RotateY(pi);
 	Object.get_transform().SetTranslate(newLoc);
 	
 }
