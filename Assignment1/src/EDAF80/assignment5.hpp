@@ -56,7 +56,7 @@ namespace edaf80
 		//! render loop.
 		void run();
 
-		void moveObjectCircular(Node& Object, float Omega, enum CircularMovement direction, float elapsed_time_s);
+		void moveObjectCircular(Node& Object, float Omega, float Radius, enum CircularMovement direction, float elapsed_time_s);
 		void moveObjectLinear(Node& Object, float movingSpeed, glm::vec3 MovingDirection, float elapsed_time_s);
 		int collisionCount(Node& Object1, Node& Object2, float ObjCollRadius1, float ObjCollRadius2);
 
