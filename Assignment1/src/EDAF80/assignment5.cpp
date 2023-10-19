@@ -148,13 +148,6 @@ edaf80::Assignment5::run()
 	GLuint const tuna_body_rough = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_rough.png"), true);
 	GLuint const tuna_body_normal = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_normal.png"), true);
 
-	//Node tuna;
-	//tuna.set_geometry(tuna_model.at(0));
-	//tuna.add_texture("tuna_body_diff", tuna_body_diff, GL_TEXTURE_2D);
-	//tuna.add_texture("tuna_body_rough", tuna_body_rough, GL_TEXTURE_2D);
-	//tuna.add_texture("tuna_body_normal", tuna_body_normal, GL_TEXTURE_2D);
-	//tuna.set_material_constants(tuna_material);
-
 	//Submarine
 	bonobo::material_data submarine_material;
 	submarine_material.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
@@ -176,6 +169,21 @@ edaf80::Assignment5::run()
 	submarine.set_material_constants(submarine_material);
 	submarine.get_transform().SetScale(0.01f);
 	//End submarine
+
+	//Ocean floor
+	bonobo::material_data sand_material;
+	sand_material.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+	sand_material.diffuse = glm::vec3(0.7f, 0.2f, 0.4f);
+	sand_material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	sand_material.shininess = 5.0f;
+
+	Node sand;
+	sand.set_geometry(parametric_shapes::createQuad(100.0f, 100.0f, 100u, 100u));
+	sand.get_transform().SetTranslate(glm::vec3(0.0f, -30.0f, 0.0f));
+	sand.add_texture("diffuse_map", bonobo::loadTexture2D(config::resources_path("textures/sand/sand_diff.png")), GL_TEXTURE_2D);
+	sand.add_texture("normal_map", bonobo::loadTexture2D(config::resources_path("textures/sand/sand_normal.png")), GL_TEXTURE_2D);
+	sand.add_texture("specular_map", bonobo::loadTexture2D(config::resources_path("textures/sand/sand_spec.png")), GL_TEXTURE_2D);
+	sand.set_material_constants(sand_material);
 
 	//Shark
 	bonobo::material_data shark_material;
@@ -233,6 +241,8 @@ edaf80::Assignment5::run()
 	seaweed_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
 	seaweed_material.shininess = 10.0f;
 
+
+
 	//Seasweed
 	bonobo::material_data bubble_material;
 	seaweed_material.ambient = glm::vec3(0.0f, 0.2f, 0.7f);
@@ -246,8 +256,6 @@ edaf80::Assignment5::run()
 	GLuint const seaweed_spec = bonobo::loadTexture2D(config::resources_path("textures/seaweed/seaweed_spec.png"), true);
 	GLuint const seaweed_normal = bonobo::loadTexture2D(config::resources_path("textures/seaweed/seaweed_normal.png"), true);
 	//End seaweed
-
-	//Bubble
 	
 
 	glClearDepthf(1.0f);
@@ -293,13 +301,13 @@ edaf80::Assignment5::run()
 	std::vector<Node> seaweeds;
 	std::vector<Node> bubbles;
 	int iMaxNumberofCoins = 100;
-	int iMaxNumberofTunas = 50;
-	int iMaxNumberofSharks = 30;
+	int iMaxNumberofTunas = 60;
+	int iMaxNumberofSharks = 60;
 	int iMaxNumberofSeaweeds = 20;
 	int iMaxNumberofBubbles = 100;
 	const int iGameRadius = 80;
 	int iRewardCounter = 0;
-	int iEngineCounter = 5;
+	int iEngineCounter = 3;
 
 	auto const coin_set_uniforms =
 		[&light_position, &camera_position, &coin_material, &elapsed_time_s](GLuint program) {
@@ -333,6 +341,16 @@ edaf80::Assignment5::run()
 		glUniform1f(glGetUniformLocation(program, "shininess"), bubble_material.shininess);
 		};
 
+	auto const sand_set_uniforms = [&light_position, &camera_position, &sand_material](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(sand_material.ambient));
+		glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(sand_material.diffuse));
+		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(sand_material.specular));
+		glUniform1f(glGetUniformLocation(program, "shininess"), sand_material.shininess);
+		};
+	sand.set_program(&shark_shader, sand_set_uniforms);
+
 	//Initial position of coins
 	for (std::size_t i = 0; i < iMaxNumberofCoins; ++i) {
 		Node _coin;
@@ -344,7 +362,6 @@ edaf80::Assignment5::run()
 		_coin.add_texture("coin_spec", coin_rough, GL_TEXTURE_2D);
 		_coin.add_texture("coin_normal", coin_normal, GL_TEXTURE_2D);
 		_coin.set_program(&shark_shader, coin_set_uniforms);
-
 		rewards.push_back(_coin);
 	}
 
@@ -360,7 +377,6 @@ edaf80::Assignment5::run()
 		_seaweed.add_texture("seaweed_normal", seaweed_normal, GL_TEXTURE_2D);
 		_seaweed.get_transform().SetScale(rand()%10);
 		_seaweed.set_program(&shark_shader, seaweed_set_uniforms);
-
 		seaweeds.push_back(_seaweed);
 	}
 
@@ -432,13 +448,13 @@ edaf80::Assignment5::run()
 	//Initial treasure position
 	glm::vec3 TreasurePosition = glm::vec3((rand() % 20), (rand() % 20), (rand() % 20));
 
-	GameState gameState = PLAY;
+	GameState gameState = MENU;
 	while (!glfwWindowShouldClose(window)) {
 		
 		float fMovingSpeed = 0.1f;
 		
 		float fMovingRotAngle = Pi / 8;
-
+		bool menuOpen = false;
 		auto& io = ImGui::GetIO();
 		auto const nowTime = std::chrono::high_resolution_clock::now();
 		auto const deltaTimeUs = std::chrono::duration_cast<std::chrono::microseconds>(nowTime - lastTime);
@@ -511,11 +527,33 @@ edaf80::Assignment5::run()
 		glfwPollEvents();
 		inputHandler.Advance();
 		mCamera.Update(deltaTimeUs, inputHandler, false, false);
-
+		int framebuffer_width, framebuffer_height;
+		std::string sMessage = "";
 		switch (gameState)
 		{
 		case MENU:
-			
+
+			if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
+				shader_reload_failed = !program_manager.ReloadAllPrograms();
+				if (shader_reload_failed)
+					tinyfd_notifyPopup("Shader Program Reload Error",
+						"An error occurred while reloading shader programs; see the logs for details.\n"
+						"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
+						"error");
+			}
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
+				show_logs = !show_logs;
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
+				show_gui = !show_gui;
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
+				mWindowManager.ToggleFullscreenStatusForWindow(window);
+			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+			glViewport(0, 0, framebuffer_width, framebuffer_height);
+			mWindowManager.NewImGuiFrame();
+
+			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+			bonobo::changePolygonMode(polygon_mode);
+
 			if (inputHandler.GetKeycodeState(GLFW_KEY_Q) & JUST_PRESSED)
 			{
 				//Press Q to start
@@ -527,20 +565,24 @@ edaf80::Assignment5::run()
 				//Press space to start
 				gameState = EXIT;
 			}
+
+			if (!shader_reload_failed) {
+
+				skybox.render(mCamera.GetWorldToClipMatrix());
+				submarine.render(mCamera.GetWorldToClipMatrix());
+			}
+
+			menuOpen = ImGui::Begin("Game Panel", nullptr, ImGuiWindowFlags_None);
+			if (menuOpen) {
+				ImGui::Text("Press Q to start");
+				ImGui::Text("Press Esc to exit");
+			}
+			ImGui::End();
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			break;
 
 		case PLAY:
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_SPACE) & JUST_PRESSED)
-			{
-				//Press space to start
-				gameState = MENU;
-			}
-			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
-			{
-				//Press space to start
-				gameState = EXIT;
-			}
 
 			glm::vec3 SubmarineLoc = submarine.get_transform().GetTranslation();
 			glm::vec3 SubLocOffset = glm::vec3(0.0f, 5.0f, -15.0f);
@@ -569,7 +611,7 @@ edaf80::Assignment5::run()
 			if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
 				mWindowManager.ToggleFullscreenStatusForWindow(window);
 
-			int framebuffer_width, framebuffer_height;
+			
 			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
 			glViewport(0, 0, framebuffer_width, framebuffer_height);
 
@@ -643,7 +685,26 @@ edaf80::Assignment5::run()
 				submarine.get_transform().SetTranslate(SubNewLoc);
 			}
 
+			if (inputHandler.GetKeycodeState(GLFW_KEY_SPACE) & JUST_PRESSED)
+			{
+				//Press space to start
+				gameState = MENU;
+			}
+			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
+			{
+				//Press space to start
+				gameState = EXIT;
+			}
+
 			mWindowManager.NewImGuiFrame();
+			menuOpen = ImGui::Begin("Game Panel", nullptr, ImGuiWindowFlags_None);
+			if (menuOpen) {
+				ImGui::Text("Point count %d", iRewardCounter);
+				ImGui::Text("Engine count %d", iEngineCounter);
+				ImGui::Text("Press SPACE to pause");
+				ImGui::Text("Press ESC to exit");
+			}
+			ImGui::End();
 
 			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 			bonobo::changePolygonMode(polygon_mode);
@@ -702,8 +763,9 @@ edaf80::Assignment5::run()
 					if (1 == edaf80::Assignment5::collisionCount(submarine, tunas.at(i), 1.0f, 1.0f))
 					{
 						iRewardCounter--; //Reduce points if hit tuna and shift the sub away toward collision direction
-						if (iRewardCounter == 0)
+						if (iRewardCounter < 0)
 						{
+							iRewardCounter = 0;
 							iEngineCounter--; //if point is 0, destroy engine instead
 						}
 						glm::vec3 subLoc = submarine.get_transform().GetTranslation();
@@ -719,7 +781,7 @@ edaf80::Assignment5::run()
 					sharks.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 					sharks.at(i).render(mCamera.GetWorldToClipMatrix());
 					edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
-					if (1 == edaf80::Assignment5::collisionCount(submarine, sharks.at(i), 1.0f, 1.0f))
+					if (1 == edaf80::Assignment5::collisionCount(submarine, sharks.at(i), 1.5f, 1.5f))
 					{
 						iEngineCounter--; //Reduce points if hit tuna and shift the sub away toward collision direction
 						std::cout << "Engine count " << iEngineCounter << "\n";
@@ -731,8 +793,9 @@ edaf80::Assignment5::run()
 						if (iEngineCounter == 0)
 						{
 							//LOSE and return point count
-							std::cout << "YOU LOSE! Point count " << iRewardCounter << "\n";
-							//gameState = LOSE;
+							/*std::cout << "YOU LOSE! Point count " << iRewardCounter << "\n";*/
+							sMessage = "YOU LOSE!";
+							gameState = LOSE;
 						}
 					}
 				}
@@ -747,26 +810,120 @@ edaf80::Assignment5::run()
 				if (1 == edaf80::Assignment5::collisionCount(submarine, treasure, 1.0f, 1.0f))
 				{
 					//Win and return point count
-					std::cout << "YOU WIN! Point count " << iRewardCounter << "\n";
-					//gameState = WIN;
+					/*std::cout << "YOU WIN! Point count " << iRewardCounter << "\n";*/
+					sMessage = "YOU WIN!";
+					gameState = WIN;
 				}
 			}
 
+			
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			break;
 
 		case WIN:
+			if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
+				shader_reload_failed = !program_manager.ReloadAllPrograms();
+				if (shader_reload_failed)
+					tinyfd_notifyPopup("Shader Program Reload Error",
+						"An error occurred while reloading shader programs; see the logs for details.\n"
+						"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
+						"error");
+			}
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
+				show_logs = !show_logs;
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
+				show_gui = !show_gui;
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
+				mWindowManager.ToggleFullscreenStatusForWindow(window);
+			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+			glViewport(0, 0, framebuffer_width, framebuffer_height);
+			mWindowManager.NewImGuiFrame();
 
-			//Reset counter to default
-			iRewardCounter = 0;
-			iEngineCounter = 5;
+			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+			bonobo::changePolygonMode(polygon_mode);
+
+			if (inputHandler.GetKeycodeState(GLFW_KEY_Q) & JUST_PRESSED)
+			{
+				//Press Q to start
+				gameState = PLAY;
+			}
+
+			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
+			{
+				//Press space to start
+				gameState = EXIT;
+			}
+
+			if (!shader_reload_failed) {
+
+				skybox.render(mCamera.GetWorldToClipMatrix());
+				submarine.render(mCamera.GetWorldToClipMatrix());
+			}
+
+			menuOpen = ImGui::Begin("Game Menu", nullptr, ImGuiWindowFlags_None);
+			if (menuOpen) {
+				ImGui::Text("YOU WIN!");
+				ImGui::Text("Point count %d", iRewardCounter);
+				ImGui::Text("Engine count %d", iEngineCounter);
+				ImGui::Text("Press Q to start");
+				ImGui::Text("Press Esc to exit");
+			}
+			ImGui::End();
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			break;
 
 		case LOSE:
+			if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
+				shader_reload_failed = !program_manager.ReloadAllPrograms();
+				if (shader_reload_failed)
+					tinyfd_notifyPopup("Shader Program Reload Error",
+						"An error occurred while reloading shader programs; see the logs for details.\n"
+						"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
+						"error");
+			}
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
+				show_logs = !show_logs;
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
+				show_gui = !show_gui;
+			if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
+				mWindowManager.ToggleFullscreenStatusForWindow(window);
+			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+			glViewport(0, 0, framebuffer_width, framebuffer_height);
+			mWindowManager.NewImGuiFrame();
 
-			//Reset counter to default
-			iRewardCounter = 0;
-			iEngineCounter = 5;
+			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+			bonobo::changePolygonMode(polygon_mode);
+
+			if (inputHandler.GetKeycodeState(GLFW_KEY_Q) & JUST_PRESSED)
+			{
+				//Press Q to start
+				gameState = PLAY;
+			}
+
+			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
+			{
+				//Press space to start
+				gameState = EXIT;
+			}
+
+			if (!shader_reload_failed) {
+
+				skybox.render(mCamera.GetWorldToClipMatrix());
+				submarine.render(mCamera.GetWorldToClipMatrix());
+			}
+
+			menuOpen = ImGui::Begin("Game Menu", nullptr, ImGuiWindowFlags_None);
+			if (menuOpen) {
+				ImGui::Text("YOU LOSE!");
+				ImGui::Text("Point count %d", iRewardCounter);
+				ImGui::Text("Engine count %d", iEngineCounter);
+				ImGui::Text("Press Q to start");
+				ImGui::Text("Press Esc to exit");
+			}
+			ImGui::End();
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			break;
 
 		case EXIT:
@@ -781,12 +938,14 @@ edaf80::Assignment5::run()
 		// Todo: If you want a custom ImGUI window, you can set it up
 		//       here
 		//
-		bool const opened = ImGui::Begin("Scene Controls", nullptr, ImGuiWindowFlags_None);
+		/*bool const opened = ImGui::Begin("Scene Controls", nullptr, ImGuiWindowFlags_None);
 		if (opened) {
 			ImGui::Checkbox("Show basis", &show_basis);
 			ImGui::Checkbox("Pause animation", &pause_animation);
+			ImGui::Text("Point count %d",iRewardCounter);
+			ImGui::Text("Engine count %d", iEngineCounter);
 		}
-		ImGui::End();
+		ImGui::End();*/
 
 		if (show_basis)
 			bonobo::renderBasis(basis_thickness_scale, basis_length_scale, mCamera.GetWorldToClipMatrix());
