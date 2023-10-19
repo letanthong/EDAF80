@@ -112,6 +112,13 @@ edaf80::Assignment5::run()
 		return;
 	}
 
+	//Bubble shape
+	auto bubble_shape = parametric_shapes::createSphere(0.1f, 10u, 10u);
+	if (bubble_shape.vao == 0u) {
+		LogError("Failed to retrieve the mesh for the skybox");
+		return;
+	}
+
 	GLuint const skybox_texture = bonobo::loadTextureCubeMap(
 		config::resources_path("cubemaps/Underwater/uw_ft_posx.jpg"),
 		config::resources_path("cubemaps/Underwater/uw_bk_negx.jpg"),
@@ -178,19 +185,10 @@ edaf80::Assignment5::run()
 	shark_material.shininess = 10.0f;
 
 	std::vector<bonobo::mesh_data> shark_model;
-	shark_model = bonobo::loadObjects(config::resources_path("textures/shark/shark.obj"));
-	GLuint const shark_diff = bonobo::loadTexture2D(config::resources_path("textures/shark/shark_diff.png"), true);
-	GLuint const shark_rough = bonobo::loadTexture2D(config::resources_path("textures/shark/shark_rough.png"), true);
-	GLuint const shark_normal = bonobo::loadTexture2D(config::resources_path("textures/shark/shark_normal.png"), true);
-
-	//Node shark;
-	//shark.set_geometry(shark_model.at(0));
-	//shark.add_texture("shark_diff", shark_diff, GL_TEXTURE_2D);
-	//shark.add_texture("shark_rough", shark_rough, GL_TEXTURE_2D);
-	//shark.add_texture("shark_normal", shark_normal, GL_TEXTURE_2D);
-	//shark.set_material_constants(shark_material);
-	//shark.get_transform().SetScale(0.3f);
-	//End shark
+	shark_model = bonobo::loadObjects(config::resources_path("textures/shark/hammershark.obj"));
+	GLuint const shark_diff = bonobo::loadTexture2D(config::resources_path("textures/shark/hammershark_diff.png"), true);
+	GLuint const shark_rough = bonobo::loadTexture2D(config::resources_path("textures/shark/hammershark_spec.png"), true);
+	GLuint const shark_normal = bonobo::loadTexture2D(config::resources_path("textures/shark/hammershark_normal.png"), true);
 
 	//Treasure
 	bonobo::material_data treasure_material;
@@ -227,6 +225,30 @@ edaf80::Assignment5::run()
 	GLuint const coin_rough = bonobo::loadTexture2D(config::resources_path("textures/treasure/coin_spec.png"), true);
 	GLuint const coin_normal = bonobo::loadTexture2D(config::resources_path("textures/treasure/coin_normal.png"), true);
 	//End coin
+
+	//Seasweed
+	bonobo::material_data seaweed_material;
+	seaweed_material.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
+	seaweed_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
+	seaweed_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
+	seaweed_material.shininess = 10.0f;
+
+	//Seasweed
+	bonobo::material_data bubble_material;
+	seaweed_material.ambient = glm::vec3(0.0f, 0.2f, 0.7f);
+	seaweed_material.diffuse = glm::vec3(0.0f, 0.3f, 0.7f);
+	seaweed_material.specular = glm::vec3(0.2f, 0.5f, 0.5f);
+	seaweed_material.shininess = 10.0f;
+
+	std::vector<bonobo::mesh_data> seaweed_model;
+	seaweed_model = bonobo::loadObjects(config::resources_path("textures/seaweed/tall_seaweed.obj"));
+	GLuint const seaweed_diff = bonobo::loadTexture2D(config::resources_path("textures/seaweed/seaweed_diff.png"), true);
+	GLuint const seaweed_spec = bonobo::loadTexture2D(config::resources_path("textures/seaweed/seaweed_spec.png"), true);
+	GLuint const seaweed_normal = bonobo::loadTexture2D(config::resources_path("textures/seaweed/seaweed_normal.png"), true);
+	//End seaweed
+
+	//Bubble
+	
 
 	glClearDepthf(1.0f);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -268,10 +290,14 @@ edaf80::Assignment5::run()
 	std::vector<Node> tunas;
 	std::vector<Node> sharks;
 	std::vector<Node> rewards;
-	const int iMaxNumberofCoins = 100;
-	const int iMaxNumberofTunas = 30;
-	const int iMaxNumberofSharks = 20;
-	const int iGameRadius = 90;
+	std::vector<Node> seaweeds;
+	std::vector<Node> bubbles;
+	int iMaxNumberofCoins = 100;
+	int iMaxNumberofTunas = 50;
+	int iMaxNumberofSharks = 30;
+	int iMaxNumberofSeaweeds = 20;
+	int iMaxNumberofBubbles = 100;
+	const int iGameRadius = 80;
 	int iRewardCounter = 0;
 	int iEngineCounter = 5;
 
@@ -284,6 +310,27 @@ edaf80::Assignment5::run()
 		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(coin_material.specular));
 		glUniform1f(glGetUniformLocation(program, "shininess"), coin_material.shininess);
 		glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
+		};
+
+	auto const seaweed_set_uniforms =
+		[&light_position, &camera_position, &seaweed_material, &elapsed_time_s](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(seaweed_material.ambient));
+		glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(seaweed_material.diffuse));
+		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(seaweed_material.specular));
+		glUniform1f(glGetUniformLocation(program, "shininess"), seaweed_material.shininess);
+		glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
+		};
+
+	auto const bubble_set_uniforms =
+		[&light_position, &camera_position, &bubble_material](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(bubble_material.ambient));
+		glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(bubble_material.diffuse));
+		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(bubble_material.specular));
+		glUniform1f(glGetUniformLocation(program, "shininess"), bubble_material.shininess);
 		};
 
 	//Initial position of coins
@@ -299,6 +346,34 @@ edaf80::Assignment5::run()
 		_coin.set_program(&shark_shader, coin_set_uniforms);
 
 		rewards.push_back(_coin);
+	}
+
+	//Initial position of seaweed
+	for (std::size_t i = 0; i < iMaxNumberofSeaweeds; ++i) {
+		Node _seaweed;
+		glm::vec3 seaweed_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
+		_seaweed.set_geometry(seaweed_model.at(0));
+		_seaweed.get_transform().SetTranslate(seaweed_location);
+		_seaweed.set_material_constants(coin_material);
+		_seaweed.add_texture("seaweed_diff", seaweed_diff, GL_TEXTURE_2D);
+		_seaweed.add_texture("seaweed_spec", seaweed_spec, GL_TEXTURE_2D);
+		_seaweed.add_texture("seaweed_normal", seaweed_normal, GL_TEXTURE_2D);
+		_seaweed.get_transform().SetScale(8.0f);
+		_seaweed.set_program(&shark_shader, seaweed_set_uniforms);
+
+		seaweeds.push_back(_seaweed);
+	}
+
+	//Initial position of bubbles
+	for (std::size_t i = 0; i < iMaxNumberofBubbles; ++i) {
+		Node _bubble;
+		glm::vec3 bubble_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
+		_bubble.set_geometry(bubble_shape);
+		_bubble.get_transform().SetTranslate(bubble_location);
+		_bubble.get_transform().SetScale(rand()%3);
+		_bubble.set_program(&diffuse_shader, bubble_set_uniforms);
+
+		bubbles.push_back(_bubble);
 	}
 
 	//Initial position of tunas
@@ -318,10 +393,16 @@ edaf80::Assignment5::run()
 	{
 		fTunaMovingRadius.push_back(rand() % iGameRadius);
 	}
-	std::vector<float> fTunaMovingSpeed;
+	std::vector<float> CircularMovingSpeed;
 	for (std::size_t i = 0; i < tunas.size(); i++)
 	{
-		fTunaMovingSpeed.push_back((rand() % 4)*(Pi/20));
+		CircularMovingSpeed.push_back((rand() % 4)*(Pi/20));
+	}
+
+	std::vector<glm::vec3> LinearMovingDirection;
+	for (std::size_t i = 0; i < tunas.size(); i++)
+	{
+		LinearMovingDirection.push_back(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)));
 	}
 
 	//Initial position of sharks
@@ -333,7 +414,7 @@ edaf80::Assignment5::run()
 		_shark.add_texture("shark_rough", shark_rough, GL_TEXTURE_2D);
 		_shark.add_texture("shark_normal", shark_normal, GL_TEXTURE_2D);
 		_shark.set_material_constants(shark_material);
-		_shark.get_transform().SetScale(0.5f);
+		_shark.get_transform().SetScale(2.5f);
 		_shark.get_transform().SetTranslate(shark_location);
 		sharks.push_back(_shark);
 	}
@@ -349,7 +430,7 @@ edaf80::Assignment5::run()
 	}
 
 	//Initial treasure position
-	glm::vec3 TreasurePosition = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius));
+	glm::vec3 TreasurePosition = glm::vec3((rand() % 20), (rand() % 20), (rand() % 20));
 
 	GameState gameState = PLAY;
 	while (!glfwWindowShouldClose(window)) {
@@ -462,8 +543,8 @@ edaf80::Assignment5::run()
 			}
 
 			glm::vec3 SubmarineLoc = submarine.get_transform().GetTranslation();
-			glm::vec3 SubLocOffset = glm::vec3(0.0f, 2.0f, -5.0f);
-			glm::vec3 SubViewOffset = glm::vec3(0.0f, 0.0f, 10.0f);
+			glm::vec3 SubLocOffset = glm::vec3(0.0f, 5.0f, -15.0f);
+			glm::vec3 SubViewOffset = glm::vec3(0.0f, 0.0f, 15.0f);
 			light_position = SubmarineLoc + SubLocOffset;
 			mCamera.mWorld.SetTranslate(SubmarineLoc + SubLocOffset);
 			mCamera.mWorld.LookAt(SubmarineLoc + SubViewOffset);
@@ -572,13 +653,13 @@ edaf80::Assignment5::run()
 				skybox.render(mCamera.GetWorldToClipMatrix());
 				submarine.render(mCamera.GetWorldToClipMatrix());
 
-
+				//Render coins
 				for (int i = 0; i < rewards.size(); i++)
 				{
 					if (0 == edaf80::Assignment5::collisionCount(submarine, rewards.at(i), 1.0f, 1.0f))
 					{
 						rewards.at(i).render(mCamera.GetWorldToClipMatrix());
-						rewards.at(i).get_transform().RotateY(Pi / 20);
+						rewards.at(i).get_transform().RotateY(Pi / 30);
 					}
 					else
 					{
@@ -587,12 +668,36 @@ edaf80::Assignment5::run()
 						std::cout << "Point count " << iRewardCounter << "\n";
 					}
 				}
-				
+
+				//Render seaweeds
+				for (int i = 0; i < seaweeds.size(); i++)
+				{
+					seaweeds.at(i).render(mCamera.GetWorldToClipMatrix());
+					seaweeds.at(i).get_transform().RotateY(Pi / 200);
+				}
+
+				//Render bubbles
+				for (int i = 0; i < bubbles.size(); i++)
+				{
+					bubbles.at(i).render(mCamera.GetWorldToClipMatrix());
+					//bubble moving up
+					edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.005f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
+					glm::vec3 bubbleLoc = bubbles.at(i).get_transform().GetTranslation();
+					//Relocate to new location if moving out of the gamezone
+					if (bubbleLoc.x > iGameRadius || bubbleLoc.x < -iGameRadius ||
+						bubbleLoc.y > iGameRadius || bubbleLoc.y < -iGameRadius ||
+						bubbleLoc.z > iGameRadius || bubbleLoc.z < -iGameRadius)
+					{
+						bubbles.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)));
+					}
+				}
+
+				//Render tunas
 				for (int i = 0; i < tunas.size(); i++)
 				{
 					tunas.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 					tunas.at(i).render(mCamera.GetWorldToClipMatrix());
-					//edaf80::Assignment5::moveObjectCircular(tunas.at(i), fTunaMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+					edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
 					
 					if (1 == edaf80::Assignment5::collisionCount(submarine, tunas.at(i), 1.0f, 1.0f))
 					{
@@ -608,11 +713,12 @@ edaf80::Assignment5::run()
 					}
 				}
 
+				//Render sharks
 				for (int i = 0; i < sharks.size(); i++)
 				{
 					sharks.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 					sharks.at(i).render(mCamera.GetWorldToClipMatrix());
-					//edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+					edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
 					if (1 == edaf80::Assignment5::collisionCount(submarine, sharks.at(i), 1.0f, 1.0f))
 					{
 						iEngineCounter--; //Reduce points if hit tuna and shift the sub away toward collision direction
@@ -631,13 +737,13 @@ edaf80::Assignment5::run()
 					}
 				}
 
-				//Render the treasure after playing for 3min
-				if (elapsed_time_s > 180.0f)
+				//Render the treasure after playing for 1min
+				treasure.get_transform().SetTranslate(TreasurePosition);
+				if (elapsed_time_s > 60.0f)
 				{
 					treasure.render(mCamera.GetWorldToClipMatrix());
-					treasure.get_transform().SetTranslate(TreasurePosition);
+					
 				}
-
 				if (1 == edaf80::Assignment5::collisionCount(submarine, treasure, 1.0f, 1.0f))
 				{
 					//Win and return point count
@@ -708,7 +814,6 @@ void edaf80::Assignment5::moveObjectCircular(Node& Object, float Omega, float Ra
 	Object.get_transform().LookAt(newLoc);
 	Object.get_transform().RotateY(pi);
 	Object.get_transform().SetTranslate(newLoc);
-	
 }
 
 void edaf80::Assignment5::moveObjectLinear(Node& Object, float movingSpeed, glm::vec3 MovingDirection, float elapsed_time_s)
