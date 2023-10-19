@@ -358,7 +358,7 @@ edaf80::Assignment5::run()
 		_seaweed.add_texture("seaweed_diff", seaweed_diff, GL_TEXTURE_2D);
 		_seaweed.add_texture("seaweed_spec", seaweed_spec, GL_TEXTURE_2D);
 		_seaweed.add_texture("seaweed_normal", seaweed_normal, GL_TEXTURE_2D);
-		_seaweed.get_transform().SetScale(8.0f);
+		_seaweed.get_transform().SetScale(rand()%10);
 		_seaweed.set_program(&shark_shader, seaweed_set_uniforms);
 
 		seaweeds.push_back(_seaweed);
@@ -370,7 +370,7 @@ edaf80::Assignment5::run()
 		glm::vec3 bubble_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
 		_bubble.set_geometry(bubble_shape);
 		_bubble.get_transform().SetTranslate(bubble_location);
-		_bubble.get_transform().SetScale(rand()%3);
+		_bubble.get_transform().SetScale(rand()%5);
 		_bubble.set_program(&diffuse_shader, bubble_set_uniforms);
 
 		bubbles.push_back(_bubble);
@@ -414,7 +414,7 @@ edaf80::Assignment5::run()
 		_shark.add_texture("shark_rough", shark_rough, GL_TEXTURE_2D);
 		_shark.add_texture("shark_normal", shark_normal, GL_TEXTURE_2D);
 		_shark.set_material_constants(shark_material);
-		_shark.get_transform().SetScale(2.5f);
+		_shark.get_transform().SetScale(rand()%5);
 		_shark.get_transform().SetTranslate(shark_location);
 		sharks.push_back(_shark);
 	}
@@ -681,7 +681,7 @@ edaf80::Assignment5::run()
 				{
 					bubbles.at(i).render(mCamera.GetWorldToClipMatrix());
 					//bubble moving up
-					edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.005f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
+					edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.004f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
 					glm::vec3 bubbleLoc = bubbles.at(i).get_transform().GetTranslation();
 					//Relocate to new location if moving out of the gamezone
 					if (bubbleLoc.x > iGameRadius || bubbleLoc.x < -iGameRadius ||
