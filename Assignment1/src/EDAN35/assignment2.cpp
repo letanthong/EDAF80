@@ -463,6 +463,7 @@ edan35::Assignment2::run()
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[toU(FBO::GBuffer)]);
 			glViewport(0, 0, framebuffer_width, framebuffer_height);
 			glClear(GL_DEPTH_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT); //tle Lab2_1.4 _ Because the color buffer was not reset
 			// XXX: Is any other clearing needed?
 
 			glUseProgram(fill_gbuffer_shader);
