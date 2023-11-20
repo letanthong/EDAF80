@@ -410,6 +410,7 @@ edan35::Assignment2::run()
 			}
 			else
 			{
+				//tle check here for location
 				fillGBufferShaderLocations(fill_gbuffer_shader, fill_gbuffer_shader_locations);
 				fillShadowmapShaderLocations(fill_shadowmap_shader, fill_shadowmap_shader_locations);
 				fillAccumulateLightsShaderLocations(accumulate_lights_shader, accumulate_light_shader_locations);
@@ -463,6 +464,7 @@ edan35::Assignment2::run()
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[toU(FBO::GBuffer)]);
 			glViewport(0, 0, framebuffer_width, framebuffer_height);
 			glClear(GL_DEPTH_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT); //tle Lab2_1.4 _ Because the color buffer was not reset
 			// XXX: Is any other clearing needed?
 
 			glUseProgram(fill_gbuffer_shader);
@@ -529,6 +531,8 @@ edan35::Assignment2::run()
 			//
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[toU(FBO::LightAccumulation)]);
 			glViewport(0, 0, framebuffer_width, framebuffer_height);
+			//glClear(GL_DEPTH_BUFFER_BIT); //tle Lab2-1.5
+			glClear(GL_COLOR_BUFFER_BIT);
 			// XXX: Is any clearing needed?
 			for (size_t i = 0; i < static_cast<size_t>(lights_nb); ++i) {
 				auto const& lightTransform = lightTransforms[i];
@@ -544,6 +548,8 @@ edan35::Assignment2::run()
 
 				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[toU(FBO::ShadowMap)]);
 				glViewport(0, 0, constant::shadowmap_res_x, constant::shadowmap_res_y);
+				glClear(GL_DEPTH_BUFFER_BIT); //tle Lab2-1.5
+				glClear(GL_COLOR_BUFFER_BIT);
 				// XXX: Is any clearing needed?
 
 				glUseProgram(fill_shadowmap_shader);
@@ -595,6 +601,8 @@ edan35::Assignment2::run()
 				glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[toU(FBO::LightAccumulation)]);
 				glUseProgram(accumulate_lights_shader);
 				glViewport(0, 0, framebuffer_width, framebuffer_height);
+				glClear(GL_DEPTH_BUFFER_BIT); //tle Lab2-1.5
+				//glClear(GL_COLOR_BUFFER_BIT); //Why does this line make only 1 light source able to illuminate the scene???
 				// XXX: Is any clearing needed?
 
 				glUniform1i(accumulate_light_shader_locations.light_index, static_cast<int>(i));
