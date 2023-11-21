@@ -35,6 +35,25 @@ uniform float light_angle_falloff;
 layout (location = 0) out vec4 light_diffuse_contribution;
 layout (location = 1) out vec4 light_specular_contribution;
 
+// Function to perform PCF sampling
+float pcfSample(sampler2D shadowMap, vec2 shadowCoords, float compareDepth, float radius)
+{
+    float result = 0.0;
+    int sampleCount = 4; // You can adjust this for more or fewer samples
+
+    for (int i = -sampleCount; i <= sampleCount; ++i)
+    {
+        for (int j = -sampleCount; j <= sampleCount; ++j)
+        {
+            vec2 offset = vec2(float(i), float(j)) * radius;
+            float depth = texture(shadowMap, shadowCoords + offset).r;
+            result += (depth < compareDepth) ? 1.0 : 0.0;
+        }
+    }
+
+    // Average the results
+    return result / float((2 * sampleCount + 1) * (2 * sampleCount + 1));
+}
 
 void main()
 {
@@ -89,8 +108,24 @@ void main()
     // Combine ambient, diffuse, and specular
     vec3 diffuse_color = light_color * diffuse * attenuation;
     vec3 specular_color = light_color * specular * attenuation;
+	  // Check if the pixel is in shadow using PCF
+    float shadow_factor = 1.0;
+
+    // Use lights[light_index].view_projection to project the fragment's position into the shadow map
+    vec4 frag_light_space = lights[light_index].view_projection * vec4(gl_FragCoord.xyz, 1.0);
+
+    // Normalize homogeneous coordinates and convert to [0, 1] range
+    vec3 shadow_coords = frag_light_space.xyz / frag_light_space.w;
+    shadow_coords = shadow_coords * 0.5 + 0.5;
+
+    // Compare the depth value in the shadow map with the projected depth using PCF
+    float compare_depth = shadow_coords.z;
+    shadow_factor = pcfSample(shadow_texture, shadow_coords.xy, compare_depth, 0.002);
+
 
     // Output the final contributions
-    light_diffuse_contribution = vec4(diffuse_color, 1.0);
-    light_specular_contribution = vec4(specular_color, 1.0);
+    light_diffuse_contribution = vec4(diffuse_color, 1.0)*shadow_factor;
+    light_specular_contribution = vec4(specular_color, 1.0)*shadow_factor;
+
+	
 }
