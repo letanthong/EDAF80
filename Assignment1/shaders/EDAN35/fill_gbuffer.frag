@@ -39,5 +39,5 @@ void main()
 
 	// Worldspace normal
 	//geometry_normal.xyz = vec3(0.0);
-	geometry_normal.xyz = fs_in.normal*0.5f + 0.5f; //Lab2_1.4 - Write normal to geometry_normal
+	geometry_normal.xyz = fs_in.normal*0.5 + 0.5; //Lab2_1.4 - Write normal to geometry_normal
 }
