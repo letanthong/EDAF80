@@ -106,7 +106,7 @@ edaf80::Assignment5::run()
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position)); };
 
 	//Skybox
-	auto skybox_shape = parametric_shapes::createSphere(100.0f, 1000u, 1000u);
+	auto skybox_shape = parametric_shapes::createSphere(30.0f, 100u, 100u);
 	if (skybox_shape.vao == 0u) {
 		LogError("Failed to retrieve the mesh for the skybox");
 		return;
@@ -170,21 +170,6 @@ edaf80::Assignment5::run()
 	submarine.get_transform().SetScale(0.01f);
 	//End submarine
 
-	//Ocean floor
-	bonobo::material_data sand_material;
-	sand_material.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
-	sand_material.diffuse = glm::vec3(0.7f, 0.2f, 0.4f);
-	sand_material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
-	sand_material.shininess = 5.0f;
-
-	Node sand;
-	sand.set_geometry(parametric_shapes::createQuad(100.0f, 100.0f, 100u, 100u));
-	sand.get_transform().SetTranslate(glm::vec3(0.0f, -30.0f, 0.0f));
-	sand.add_texture("diffuse_map", bonobo::loadTexture2D(config::resources_path("textures/sand/sand_diff.png")), GL_TEXTURE_2D);
-	sand.add_texture("normal_map", bonobo::loadTexture2D(config::resources_path("textures/sand/sand_normal.png")), GL_TEXTURE_2D);
-	sand.add_texture("specular_map", bonobo::loadTexture2D(config::resources_path("textures/sand/sand_spec.png")), GL_TEXTURE_2D);
-	sand.set_material_constants(sand_material);
-
 	//Shark
 	bonobo::material_data shark_material;
 	shark_material.ambient = glm::vec3(0.5f, 0.5f, 0.5f);
@@ -240,8 +225,6 @@ edaf80::Assignment5::run()
 	seaweed_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
 	seaweed_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
 	seaweed_material.shininess = 10.0f;
-
-
 
 	//Seasweed
 	bonobo::material_data bubble_material;
@@ -300,12 +283,12 @@ edaf80::Assignment5::run()
 	std::vector<Node> rewards;
 	std::vector<Node> seaweeds;
 	std::vector<Node> bubbles;
-	int iMaxNumberofCoins = 100;
-	int iMaxNumberofTunas = 60;
-	int iMaxNumberofSharks = 60;
-	int iMaxNumberofSeaweeds = 20;
-	int iMaxNumberofBubbles = 100;
-	const int iGameRadius = 80;
+	int iMaxNumberofCoins = 0;
+	int iMaxNumberofTunas = 1;
+	int iMaxNumberofSharks = 0;
+	int iMaxNumberofSeaweeds = 0;
+	int iMaxNumberofBubbles = 0;
+	const int iGameRadius = 10;
 	int iRewardCounter = 0;
 	int iEngineCounter = 3;
 
@@ -340,16 +323,6 @@ edaf80::Assignment5::run()
 		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(bubble_material.specular));
 		glUniform1f(glGetUniformLocation(program, "shininess"), bubble_material.shininess);
 		};
-
-	auto const sand_set_uniforms = [&light_position, &camera_position, &sand_material](GLuint program) {
-		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
-		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
-		glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(sand_material.ambient));
-		glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(sand_material.diffuse));
-		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(sand_material.specular));
-		glUniform1f(glGetUniformLocation(program, "shininess"), sand_material.shininess);
-		};
-	sand.set_program(&shark_shader, sand_set_uniforms);
 
 	//Initial position of coins
 	for (std::size_t i = 0; i < iMaxNumberofCoins; ++i) {
@@ -529,423 +502,110 @@ edaf80::Assignment5::run()
 		mCamera.Update(deltaTimeUs, inputHandler, false, false);
 		int framebuffer_width, framebuffer_height;
 		std::string sMessage = "";
-		switch (gameState)
-		{
-		case MENU:
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
-				shader_reload_failed = !program_manager.ReloadAllPrograms();
-				if (shader_reload_failed)
-					tinyfd_notifyPopup("Shader Program Reload Error",
-						"An error occurred while reloading shader programs; see the logs for details.\n"
-						"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
-						"error");
-			}
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
-				show_logs = !show_logs;
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
-				show_gui = !show_gui;
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
-				mWindowManager.ToggleFullscreenStatusForWindow(window);
-			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
-			glViewport(0, 0, framebuffer_width, framebuffer_height);
-			mWindowManager.NewImGuiFrame();
-
-			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-			bonobo::changePolygonMode(polygon_mode);
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_Q) & JUST_PRESSED)
-			{
-				//Press Q to start
-				gameState = PLAY;
-			}
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
-			{
-				//Press space to start
-				gameState = EXIT;
-			}
-
-			if (!shader_reload_failed) {
-
-				skybox.render(mCamera.GetWorldToClipMatrix());
-				submarine.render(mCamera.GetWorldToClipMatrix());
-			}
-
-			menuOpen = ImGui::Begin("Game Panel", nullptr, ImGuiWindowFlags_None);
-			if (menuOpen) {
-				ImGui::Text("Press Q to start");
-				ImGui::Text("Press Esc to exit");
-			}
-			ImGui::End();
-
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			break;
-
-		case PLAY:
-
-			glm::vec3 SubmarineLoc = submarine.get_transform().GetTranslation();
-			glm::vec3 SubLocOffset = glm::vec3(0.0f, 5.0f, -15.0f);
-			glm::vec3 SubViewOffset = glm::vec3(0.0f, 0.0f, 15.0f);
-			light_position = SubmarineLoc + SubLocOffset;
-			mCamera.mWorld.SetTranslate(SubmarineLoc + SubLocOffset);
-			mCamera.mWorld.LookAt(SubmarineLoc + SubViewOffset);
-			
-			if (use_orbit_camera) {
-				mCamera.mWorld.LookAt(glm::vec3(0.0f));
-			}
-			camera_position = mCamera.mWorld.GetTranslation();
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
-				shader_reload_failed = !program_manager.ReloadAllPrograms();
-				if (shader_reload_failed)
-					tinyfd_notifyPopup("Shader Program Reload Error",
-						"An error occurred while reloading shader programs; see the logs for details.\n"
-						"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
-						"error");
-			}
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
-				show_logs = !show_logs;
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
-				show_gui = !show_gui;
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
-				mWindowManager.ToggleFullscreenStatusForWindow(window);
-
-			
-			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
-			glViewport(0, 0, framebuffer_width, framebuffer_height);
-
-			//Left turn
-			if ((inputHandler.GetKeycodeState(GLFW_KEY_LEFT) & JUST_PRESSED) || (inputHandler.GetKeycodeState(GLFW_KEY_LEFT) & PRESSED))
-			{
-
-				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-				SubNewLoc.x += fMovingSpeed;
-				submarine.get_transform().SetTranslate(SubNewLoc);
-				if (iRotationCnt == 0)
-				{
-					submarine.get_transform().RotateZ(-fMovingRotAngle);
-					++iRotationCnt;
-				}
-
-			}
-			if ((inputHandler.GetKeycodeState(GLFW_KEY_LEFT) & JUST_RELEASED))
-			{
-				submarine.get_transform().RotateZ(fMovingRotAngle);
-				iRotationCnt = 0;
-			}
-
-			//Right turn
-			if ((inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & JUST_PRESSED) || (inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & PRESSED))
-			{
-				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-				SubNewLoc.x -= fMovingSpeed;
-				submarine.get_transform().SetTranslate(SubNewLoc);
-				if (iRotationCnt == 0)
-				{
-					submarine.get_transform().RotateZ(fMovingRotAngle);
-					++iRotationCnt;
-				}
-			}
-			if ( (inputHandler.GetKeycodeState(GLFW_KEY_RIGHT) & JUST_RELEASED))
-			{
-				submarine.get_transform().RotateZ(-fMovingRotAngle);
-				iRotationCnt = 0;
-			}
-
-			//Up
-			if ((inputHandler.GetKeycodeState(GLFW_KEY_UP) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_UP) & PRESSED))
-			{
-				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-				SubNewLoc.y += fMovingSpeed;
-				submarine.get_transform().SetTranslate(SubNewLoc);
-			}
-
-			//Down
-			if ((inputHandler.GetKeycodeState(GLFW_KEY_DOWN) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_DOWN) & PRESSED))
-			{
-				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-				SubNewLoc.y -= fMovingSpeed;
-				submarine.get_transform().SetTranslate(SubNewLoc);
-			}
-
-			//forward
-			if ((inputHandler.GetKeycodeState(GLFW_KEY_W) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_W) & PRESSED))
-			{
-				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-				SubNewLoc.z += fMovingSpeed;
-				submarine.get_transform().SetTranslate(SubNewLoc);
-			}
-
-			//backward
-			if ((inputHandler.GetKeycodeState(GLFW_KEY_S) & JUST_PRESSED || inputHandler.GetKeycodeState(GLFW_KEY_S) & PRESSED))
-			{
-				glm::vec3 SubNewLoc = submarine.get_transform().GetTranslation();
-				SubNewLoc.z -= fMovingSpeed;
-				submarine.get_transform().SetTranslate(SubNewLoc);
-			}
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_SPACE) & JUST_PRESSED)
-			{
-				//Press space to start
-				gameState = MENU;
-			}
-			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
-			{
-				//Press space to start
-				gameState = EXIT;
-			}
-
-			mWindowManager.NewImGuiFrame();
-			menuOpen = ImGui::Begin("Game Panel", nullptr, ImGuiWindowFlags_None);
-			if (menuOpen) {
-				ImGui::Text("Point count %d", iRewardCounter);
-				ImGui::Text("Engine count %d", iEngineCounter);
-				ImGui::Text("Press SPACE to pause");
-				ImGui::Text("Press ESC to exit");
-			}
-			ImGui::End();
-
-			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-			bonobo::changePolygonMode(polygon_mode);
-
-			if (!shader_reload_failed) {
-
-				skybox.render(mCamera.GetWorldToClipMatrix());
-				submarine.render(mCamera.GetWorldToClipMatrix());
-
-				//Render coins
-				for (int i = 0; i < rewards.size(); i++)
-				{
-					if (0 == edaf80::Assignment5::collisionCount(submarine, rewards.at(i), 1.0f, 1.0f))
-					{
-						rewards.at(i).render(mCamera.GetWorldToClipMatrix());
-						rewards.at(i).get_transform().RotateY(Pi / 30);
-					}
-					else
-					{
-						iRewardCounter++; //Stop render the coin at collision
-						rewards.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius))); //replace with a new coin
-						std::cout << "Point count " << iRewardCounter << "\n";
-					}
-				}
-
-				//Render seaweeds
-				for (int i = 0; i < seaweeds.size(); i++)
-				{
-					seaweeds.at(i).render(mCamera.GetWorldToClipMatrix());
-					seaweeds.at(i).get_transform().RotateY(Pi / 200);
-				}
-
-				//Render bubbles
-				for (int i = 0; i < bubbles.size(); i++)
-				{
-					bubbles.at(i).render(mCamera.GetWorldToClipMatrix());
-					//bubble moving up
-					edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.004f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
-					glm::vec3 bubbleLoc = bubbles.at(i).get_transform().GetTranslation();
-					//Relocate to new location if moving out of the gamezone
-					if (bubbleLoc.x > iGameRadius || bubbleLoc.x < -iGameRadius ||
-						bubbleLoc.y > iGameRadius || bubbleLoc.y < -iGameRadius ||
-						bubbleLoc.z > iGameRadius || bubbleLoc.z < -iGameRadius)
-					{
-						bubbles.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)));
-					}
-				}
-
-				//Render tunas
-				for (int i = 0; i < tunas.size(); i++)
-				{
-					tunas.at(i).set_program(&tuna_shader, tuna_set_uniforms);
-					tunas.at(i).render(mCamera.GetWorldToClipMatrix());
-					edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
-					
-					if (1 == edaf80::Assignment5::collisionCount(submarine, tunas.at(i), 1.0f, 1.0f))
-					{
-						iRewardCounter--; //Reduce points if hit tuna and shift the sub away toward collision direction
-						if (iRewardCounter < 0)
-						{
-							iRewardCounter = 0;
-							iEngineCounter--; //if point is 0, destroy engine instead
-						}
-						glm::vec3 subLoc = submarine.get_transform().GetTranslation();
-						glm::vec3 tunaLoc = tunas.at(i).get_transform().GetTranslation();
-						glm::vec3 CollisionVec = tunaLoc - subLoc;
-						submarine.get_transform().SetTranslate(subLoc + 3.0f * CollisionVec);//Move the sub to safe distance
-					}
-				}
-
-				//Render sharks
-				for (int i = 0; i < sharks.size(); i++)
-				{
-					sharks.at(i).set_program(&tuna_shader, tuna_set_uniforms);
-					sharks.at(i).render(mCamera.GetWorldToClipMatrix());
-					edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
-					if (1 == edaf80::Assignment5::collisionCount(submarine, sharks.at(i), 1.5f, 1.5f))
-					{
-						iEngineCounter--; //Reduce points if hit tuna and shift the sub away toward collision direction
-						std::cout << "Engine count " << iEngineCounter << "\n";
-						glm::vec3 subLoc = submarine.get_transform().GetTranslation();
-						glm::vec3 sharkLoc = sharks.at(i).get_transform().GetTranslation();
-						glm::vec3 CollisionVec = sharkLoc - subLoc;
-						submarine.get_transform().SetTranslate(subLoc + 3.0f * CollisionVec); //Move the sub to safe distance
-
-						if (iEngineCounter == 0)
-						{
-							//LOSE and return point count
-							/*std::cout << "YOU LOSE! Point count " << iRewardCounter << "\n";*/
-							sMessage = "YOU LOSE!";
-							gameState = LOSE;
-						}
-					}
-				}
-
-				//Render the treasure after playing for 1min
-				treasure.get_transform().SetTranslate(TreasurePosition);
-				if (elapsed_time_s > 60.0f)
-				{
-					treasure.render(mCamera.GetWorldToClipMatrix());
-					
-				}
-				if (1 == edaf80::Assignment5::collisionCount(submarine, treasure, 1.0f, 1.0f))
-				{
-					//Win and return point count
-					/*std::cout << "YOU WIN! Point count " << iRewardCounter << "\n";*/
-					sMessage = "YOU WIN!";
-					gameState = WIN;
-				}
-			}
-
-			
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			break;
-
-		case WIN:
-			if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
-				shader_reload_failed = !program_manager.ReloadAllPrograms();
-				if (shader_reload_failed)
-					tinyfd_notifyPopup("Shader Program Reload Error",
-						"An error occurred while reloading shader programs; see the logs for details.\n"
-						"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
-						"error");
-			}
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
-				show_logs = !show_logs;
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
-				show_gui = !show_gui;
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
-				mWindowManager.ToggleFullscreenStatusForWindow(window);
-			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
-			glViewport(0, 0, framebuffer_width, framebuffer_height);
-			mWindowManager.NewImGuiFrame();
-
-			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-			bonobo::changePolygonMode(polygon_mode);
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_Q) & JUST_PRESSED)
-			{
-				//Press Q to start
-				gameState = PLAY;
-			}
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
-			{
-				//Press space to start
-				gameState = EXIT;
-			}
-
-			if (!shader_reload_failed) {
-
-				skybox.render(mCamera.GetWorldToClipMatrix());
-				submarine.render(mCamera.GetWorldToClipMatrix());
-			}
-
-			menuOpen = ImGui::Begin("Game Menu", nullptr, ImGuiWindowFlags_None);
-			if (menuOpen) {
-				ImGui::Text("YOU WIN!");
-				ImGui::Text("Point count %d", iRewardCounter);
-				ImGui::Text("Engine count %d", iEngineCounter);
-				ImGui::Text("Press Q to start");
-				ImGui::Text("Press Esc to exit");
-			}
-			ImGui::End();
-
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			break;
-
-		case LOSE:
-			if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
-				shader_reload_failed = !program_manager.ReloadAllPrograms();
-				if (shader_reload_failed)
-					tinyfd_notifyPopup("Shader Program Reload Error",
-						"An error occurred while reloading shader programs; see the logs for details.\n"
-						"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
-						"error");
-			}
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
-				show_logs = !show_logs;
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
-				show_gui = !show_gui;
-			if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
-				mWindowManager.ToggleFullscreenStatusForWindow(window);
-			glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
-			glViewport(0, 0, framebuffer_width, framebuffer_height);
-			mWindowManager.NewImGuiFrame();
-
-			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-			bonobo::changePolygonMode(polygon_mode);
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_Q) & JUST_PRESSED)
-			{
-				//Press Q to start
-				gameState = PLAY;
-			}
-
-			if (inputHandler.GetKeycodeState(GLFW_KEY_ESCAPE) & JUST_PRESSED)
-			{
-				//Press space to start
-				gameState = EXIT;
-			}
-
-			if (!shader_reload_failed) {
-
-				skybox.render(mCamera.GetWorldToClipMatrix());
-				submarine.render(mCamera.GetWorldToClipMatrix());
-			}
-
-			menuOpen = ImGui::Begin("Game Menu", nullptr, ImGuiWindowFlags_None);
-			if (menuOpen) {
-				ImGui::Text("YOU LOSE!");
-				ImGui::Text("Point count %d", iRewardCounter);
-				ImGui::Text("Engine count %d", iEngineCounter);
-				ImGui::Text("Press Q to start");
-				ImGui::Text("Press Esc to exit");
-			}
-			ImGui::End();
-
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			break;
-
-		case EXIT:
-
-			//Reset counter to default
-			iRewardCounter = 0;
-			iEngineCounter = 5;
-			break;
+		if (use_orbit_camera) {
+			mCamera.mWorld.LookAt(glm::vec3(0.0f));
 		}
+		camera_position = mCamera.mWorld.GetTranslation();
 
-		//
-		// Todo: If you want a custom ImGUI window, you can set it up
-		//       here
-		//
-		/*bool const opened = ImGui::Begin("Scene Controls", nullptr, ImGuiWindowFlags_None);
-		if (opened) {
-			ImGui::Checkbox("Show basis", &show_basis);
+		if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
+			shader_reload_failed = !program_manager.ReloadAllPrograms();
+			if (shader_reload_failed)
+				tinyfd_notifyPopup("Shader Program Reload Error",
+					"An error occurred while reloading shader programs; see the logs for details.\n"
+					"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
+					"error");
+		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
+			show_logs = !show_logs;
+		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
+			show_gui = !show_gui;
+		if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
+			mWindowManager.ToggleFullscreenStatusForWindow(window);
+
+
+		glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
+		glViewport(0, 0, framebuffer_width, framebuffer_height);
+
+		mWindowManager.NewImGuiFrame();
+		menuOpen = ImGui::Begin("Control panel", nullptr, ImGuiWindowFlags_None);
+		if (menuOpen) {
 			ImGui::Checkbox("Pause animation", &pause_animation);
-			ImGui::Text("Point count %d",iRewardCounter);
-			ImGui::Text("Engine count %d", iEngineCounter);
+			bonobo::uiSelectPolygonMode("Polygon mode", polygon_mode);
 		}
-		ImGui::End();*/
+		ImGui::End();
+
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+		bonobo::changePolygonMode(polygon_mode);
+
+		if (!shader_reload_failed) {
+
+			skybox.render(mCamera.GetWorldToClipMatrix());
+			//submarine.render(mCamera.GetWorldToClipMatrix());
+
+			//Render coins
+			for (int i = 0; i < rewards.size(); i++)
+			{
+				if (0 == edaf80::Assignment5::collisionCount(submarine, rewards.at(i), 1.0f, 1.0f))
+				{
+					rewards.at(i).render(mCamera.GetWorldToClipMatrix());
+					rewards.at(i).get_transform().RotateY(Pi / 30);
+				}
+				else
+				{
+					iRewardCounter++; //Stop render the coin at collision
+					rewards.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius))); //replace with a new coin
+					std::cout << "Point count " << iRewardCounter << "\n";
+				}
+			}
+
+			//Render seaweeds
+			for (int i = 0; i < seaweeds.size(); i++)
+			{
+				seaweeds.at(i).render(mCamera.GetWorldToClipMatrix());
+				seaweeds.at(i).get_transform().RotateY(Pi / 200);
+			}
+
+			//Render bubbles
+			for (int i = 0; i < bubbles.size(); i++)
+			{
+				bubbles.at(i).render(mCamera.GetWorldToClipMatrix());
+				//bubble moving up
+				edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.004f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
+				glm::vec3 bubbleLoc = bubbles.at(i).get_transform().GetTranslation();
+				//Relocate to new location if moving out of the gamezone
+				if (bubbleLoc.x > iGameRadius || bubbleLoc.x < -iGameRadius ||
+					bubbleLoc.y > iGameRadius || bubbleLoc.y < -iGameRadius ||
+					bubbleLoc.z > iGameRadius || bubbleLoc.z < -iGameRadius)
+				{
+					bubbles.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)));
+				}
+			}
+
+			//Render tunas
+			/*for (int i = 0; i < tunas.size(); i++)
+			{
+				tunas.at(i).set_program(&tuna_shader, tuna_set_uniforms);
+				tunas.at(i).render(mCamera.GetWorldToClipMatrix());
+				edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+			}*/
+
+			//change location of the first tuna back to the origin
+			tunas.at(0).get_transform().SetTranslate(glm::vec3(0.0f));
+			tunas.at(0).set_program(&tuna_shader, tuna_set_uniforms);
+			tunas.at(0).render(mCamera.GetWorldToClipMatrix());
+			//Render sharks
+			for (int i = 0; i < sharks.size(); i++)
+			{
+				sharks.at(i).set_program(&tuna_shader, tuna_set_uniforms);
+				sharks.at(i).render(mCamera.GetWorldToClipMatrix());
+				edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+			}
+
+			/*sharks.at(0).get_transform().SetTranslate(glm::vec3(2.0f));
+			sharks.at(0).set_program(&shark_shader, shark_set_uniforms);
+			sharks.at(0).render(mCamera.GetWorldToClipMatrix());*/
+		}
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		if (show_basis)
 			bonobo::renderBasis(basis_thickness_scale, basis_length_scale, mCamera.GetWorldToClipMatrix());
