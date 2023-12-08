@@ -18,23 +18,28 @@ out VS_OUT {
 	mat3 TBN;
 } vs_out;
 
-
 void main()
 {
 	vec3 vertex_pos = vertex;
-	
-//	float pivot_angle = cos(elapsed_time_s) * 0.1f;
-//	mat2 rotation_matrix = mat2(vec2(cos(pivot_angle), -sin(pivot_angle)), vec2(sin(pivot_angle), cos(pivot_angle)));
-//	vertex_pos.xz = rotation_matrix * vertex_pos.xz;
-//	vs_out.vertex = vec3(vertex_model_to_world * vec4(vertex, 1.0));
-	vs_out.vertex = vec3(vertex_model_to_world * vec4(vertex_pos, 1.0));
+	float offset = 0.001 * cos(elapsed_time_s);
+	float pivot_angle = 0.1 * cos(elapsed_time_s);
+	mat2 rotation_matrix = mat2(vec2(cos(pivot_angle), -sin(pivot_angle)), vec2(sin(pivot_angle), cos(pivot_angle)));
+	float body = (vertex_pos.z + 1.0) / 3.0;
+	float mask = smoothstep(0.0, 2.0, 1.0 - body);
+
+	vertex_pos.x += offset;
+	vertex_pos.xz = rotation_matrix * vertex_pos.xz;
+	vertex_pos.x += cos(elapsed_time_s + body) * mask;
+
+
 	vs_out.texcoord = texcoord.xy;
-	vs_out.normal = (normal_model_to_world * vec4(normal, 0.0)).xyz;
+	vs_out.normal = normal;
+	vs_out.vertex = vec3(vertex_model_to_world * vec4(vertex_pos, 1.0));
 
 	vec3 T = normalize(vec3(vertex_model_to_world * vec4(tangents, 0.0)));
 	vec3 B = normalize(vec3(vertex_model_to_world * vec4(binormal, 0.0)));
 	vec3 N = normalize(vec3(normal_model_to_world * vec4(normal, 0.0)));
 	vs_out.TBN = mat3(T, B, N);
 
-	gl_Position = vertex_world_to_clip * vertex_model_to_world * vec4(vertex, 1.0);
+	gl_Position = vertex_world_to_clip * vertex_model_to_world * vec4(vertex_pos, 1.0);
 }

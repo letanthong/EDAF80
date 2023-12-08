@@ -106,7 +106,7 @@ edaf80::Assignment5::run()
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position)); };
 
 	//Skybox
-	auto skybox_shape = parametric_shapes::createSphere(15.0f, 100u, 100u);
+	auto skybox_shape = parametric_shapes::createSphere(30.0f, 100u, 100u);
 	if (skybox_shape.vao == 0u) {
 		LogError("Failed to retrieve the mesh for the skybox");
 		return;
@@ -225,8 +225,6 @@ edaf80::Assignment5::run()
 	seaweed_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
 	seaweed_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
 	seaweed_material.shininess = 10.0f;
-
-
 
 	//Seasweed
 	bonobo::material_data bubble_material;
@@ -529,12 +527,10 @@ edaf80::Assignment5::run()
 		glViewport(0, 0, framebuffer_width, framebuffer_height);
 
 		mWindowManager.NewImGuiFrame();
-		menuOpen = ImGui::Begin("Game Panel", nullptr, ImGuiWindowFlags_None);
+		menuOpen = ImGui::Begin("Control panel", nullptr, ImGuiWindowFlags_None);
 		if (menuOpen) {
-			ImGui::Text("Point count %d", iRewardCounter);
-			ImGui::Text("Engine count %d", iEngineCounter);
-			ImGui::Text("Press SPACE to pause");
-			ImGui::Text("Press ESC to exit");
+			ImGui::Checkbox("Pause animation", &pause_animation);
+			bonobo::uiSelectPolygonMode("Polygon mode", polygon_mode);
 		}
 		ImGui::End();
 
@@ -586,16 +582,17 @@ edaf80::Assignment5::run()
 			}
 
 			//Render tunas
-			for (int i = 0; i < tunas.size(); i++)
+			/*for (int i = 0; i < tunas.size(); i++)
 			{
 				tunas.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 				tunas.at(i).render(mCamera.GetWorldToClipMatrix());
+				edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+			}*/
 
-				//Remove movement
-				//edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
-			}
 			//change location of the first tuna back to the origin
 			tunas.at(0).get_transform().SetTranslate(glm::vec3(0.0f));
+			tunas.at(0).set_program(&tuna_shader, tuna_set_uniforms);
+			tunas.at(0).render(mCamera.GetWorldToClipMatrix());
 			//Render sharks
 			for (int i = 0; i < sharks.size(); i++)
 			{
@@ -603,6 +600,10 @@ edaf80::Assignment5::run()
 				sharks.at(i).render(mCamera.GetWorldToClipMatrix());
 				edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
 			}
+
+			/*sharks.at(0).get_transform().SetTranslate(glm::vec3(2.0f));
+			sharks.at(0).set_program(&shark_shader, shark_set_uniforms);
+			sharks.at(0).render(mCamera.GetWorldToClipMatrix());*/
 		}
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
