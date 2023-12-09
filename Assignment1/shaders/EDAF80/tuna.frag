@@ -4,6 +4,8 @@ uniform sampler2D tuna_body_diff;
 uniform sampler2D tuna_body_rough;
 uniform sampler2D tuna_body_normal;
 
+uniform mat4 normal_model_to_world;
+
 uniform vec3 light_position;
 uniform vec3 camera_position;
 
@@ -22,7 +24,6 @@ in VS_OUT {
 
 out vec4 frag_color;
 vec3 body_text_normal;
-vec3 eyes_text_normal;
 
 void main()
 {
@@ -38,6 +39,7 @@ void main()
 
 	//Body texture
 	body_text_normal = texture(tuna_body_normal, fs_in.texcoord).rgb;
+	body_text_normal = body_text_normal*2.0 -1.0;
 	N_body = normalize(fs_in.TBN * body_text_normal);
 	L = normalize(light_position - fs_in.vertex);
 	V = normalize(camera_position - fs_in.vertex);
@@ -52,4 +54,5 @@ void main()
 	frag_color_body.w = 1.0;
 
 	frag_color = frag_color_body;
+//	frag_color = vec4(1.0f);
 }
