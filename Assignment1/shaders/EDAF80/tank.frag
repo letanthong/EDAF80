@@ -37,30 +37,31 @@ out vec4 frag_color;
 
 void main()
 {
-	vec4 color_deep = vec4(0.0f, 0.0f, 0.1f, 1.0f);
-	vec4 color_shallow = vec4(0.0f, 0.5f, 0.5f, 1.0f);
+	vec4 color_deep = vec4(0.0f, 0.0f, 0.1f, 0.5f);
+	vec4 color_shallow = vec4(0.0f, 0.5f, 0.5f, 0.5f);
 	vec2 textScale = vec2(8.0f, 4.0f);
 	float normalTime = mod(fs_in.time, 100.0f);
 	vec2 normalSpeed = vec2(-0.05, 0.0);
 	float Ro = 0.02037f;
 	float eta = 0.75188f;
  
-	if(use_normal_mapping == true)
-	{
-		normalCoord0.xy = fs_in.text_coord.xy * textScale + normalTime * normalSpeed;
-		normalCoord1.xy = fs_in.text_coord.xy * textScale * 2.0 + normalTime * normalSpeed * 4.0;
-		normalCoord2.xy = fs_in.text_coord.xy * textScale * 4.0 + normalTime * normalSpeed * 8.0;
-		normal0 = texture(water_normal_texture, normalCoord0.xy).rgb * 2.0 - 1.0;
-		normal1 = texture(water_normal_texture, normalCoord1.xy).rgb * 2.0 - 1.0;
-		normal2 = texture(water_normal_texture, normalCoord2.xy).rgb * 2.0 - 1.0;
-		normal = normal0 + normal1 + normal2;
-		N = normalize(fs_in.TBN * normal);
-	}
-	else
-	{
+//	if(use_normal_mapping == true)
+//	{
+////		normalCoord0.xy = fs_in.text_coord.xy * textScale + normalTime * normalSpeed;
+////		normalCoord1.xy = fs_in.text_coord.xy * textScale * 2.0 + normalTime * normalSpeed * 4.0;
+////		normalCoord2.xy = fs_in.text_coord.xy * textScale * 4.0 + normalTime * normalSpeed * 8.0;
+////		normal0 = texture(water_normal_texture, normalCoord0.xy).rgb * 2.0 - 1.0;
+////		normal1 = texture(water_normal_texture, normalCoord1.xy).rgb * 2.0 - 1.0;
+////		normal2 = texture(water_normal_texture, normalCoord2.xy).rgb * 2.0 - 1.0;
+//		normal = texture(water_normal_texture, fs_in.text_coord.xy).rgb * 2.0 - 1.0;
+//
+//		N = normalize(fs_in.TBN * normal);
+//	}
+//	else
+//	{
 		N = normalize(fs_in.normal);
-	}
-	
+//	}
+
 
 	vec3 L = normalize(light_position - fs_in.vertex); //Light vector
 	vec3 V = normalize(camera_position - fs_in.vertex); //Viewer vector
@@ -69,12 +70,8 @@ void main()
 	float fresnel = Ro + (1.0f - Ro) * pow((1.0f - dot(V, N)), 5.0f);
 	vec4 reflection_color = texture(water_reflection_texture, reflect(-V,N).xyz);
 	vec4 refraction_color = texture(water_reflection_texture, refract(-V,N, eta).xyz);
-//	frag_color = vec4(normal * 0.5 +0.5, 1.0);
-//	frag_color = vec4(fs_in.normal * 2.0 - 1.0, 1.0);
-//	frag_color = vec4(normal, 1.0);
 
-	frag_color = water_color + reflection_color * fresnel + refraction_color * (1 - fresnel);
+	frag_color = water_color + refraction_color * (1 - fresnel);
 
 
-	//frag_color = vec4(1.0, 0.0, 0.0, 1.0);
 }

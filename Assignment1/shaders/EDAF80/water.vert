@@ -43,7 +43,7 @@ void main()
 	float phase1 = 0.5f;
 	float phase2 = 1.3f;
 	float sharpness1 = 2.0f;
-	float sharpness2 = 2.0f;
+	float sharpness2 = 2.0f; 
 
 	vec3 displace_vertex = vertex;
 	wave(Amp1, Di_1, freq1, phase1, sharpness1, elapsed_time_s , displace_vertex, Grad);
