@@ -55,6 +55,7 @@ edaf80::Assignment5::run()
 	// Create the shader programs
 	ShaderProgramManager program_manager;
 
+	//Register diffuse shader
 	GLuint diffuse_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Diffuse",
 		{ { ShaderType::vertex, "EDAF80/diffuse.vert" },
@@ -63,6 +64,7 @@ edaf80::Assignment5::run()
 	if (diffuse_shader == 0u)
 		LogError("Failed to load diffuse shader");
 
+	//Register skybox shader
 	GLuint skybox_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Skybox",
 		{ { ShaderType::vertex, "EDAF80/skybox.vert" },
@@ -72,7 +74,7 @@ edaf80::Assignment5::run()
 	if (skybox_shader == 0u)
 		LogError("Failed to load skybox shader");
 
-	//tuna shader
+	//Register tuna shader
 	GLuint tuna_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Tuna",
 		{ { ShaderType::vertex, "EDAF80/tuna.vert" },
@@ -82,15 +84,7 @@ edaf80::Assignment5::run()
 	if (tuna_shader == 0u)
 		LogError("Failed to load tuna shader");
 
-	GLuint submarine_shader = 0u;
-	program_manager.CreateAndRegisterProgram("Submarine",
-		{ { ShaderType::vertex, "EDAF80/submarine.vert" },
-		  { ShaderType::fragment, "EDAF80/submarine.frag" } },
-		submarine_shader
-	);
-	if (submarine_shader == 0u)
-		LogError("Failed to load submarine shader");
-
+	//Register shark shader
 	GLuint shark_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Shark",
 		{ { ShaderType::vertex, "EDAF80/shark.vert" },
@@ -99,14 +93,26 @@ edaf80::Assignment5::run()
 	);
 	if (shark_shader == 0u)
 		LogError("Failed to load shark shader");
-	
 
-	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
-	auto const set_uniforms = [&light_position](GLuint program) {
-		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position)); };
+	//Register bubble shader
+	GLuint bubble_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Bubble",
+		{ { ShaderType::vertex, "EDAF80/bubble.vert" },
+		  { ShaderType::fragment, "EDAF80/bubble.frag" } },
+		bubble_shader
+	);
+	if (bubble_shader == 0u)
+		LogError("Failed to load bubble shader");
+
+	auto light_position = glm::vec3(2.0f, 4.0f, 2.0f);
+	auto light_position_2 = glm::vec3(-2.0f, 4.0f, 2.0f);
+	auto const set_uniforms = [&light_position, &light_position_2](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "light_position_2"), 1, glm::value_ptr(light_position_2));
+		};
 
 	//Skybox
-	auto skybox_shape = parametric_shapes::createSphere(30.0f, 100u, 100u);
+	auto skybox_shape = parametric_shapes::createSphere(15.0f, 100u, 100u);
 	if (skybox_shape.vao == 0u) {
 		LogError("Failed to retrieve the mesh for the skybox");
 		return;
@@ -140,35 +146,13 @@ edaf80::Assignment5::run()
 	tuna_material.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
 	tuna_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
 	tuna_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
-	tuna_material.shininess = 10.0f;
+	tuna_material.shininess = 5.0f;
 
 	std::vector<bonobo::mesh_data> tuna_model;
 	tuna_model = bonobo::loadObjects(config::resources_path("textures/tuna/tuna_fish.obj"));
 	GLuint const tuna_body_diff = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_diff.png"), true);
 	GLuint const tuna_body_rough = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_rough.png"), true);
 	GLuint const tuna_body_normal = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_normal.png"), true);
-
-	//Submarine
-	bonobo::material_data submarine_material;
-	submarine_material.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
-	submarine_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
-	submarine_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
-	submarine_material.shininess = 10.0f;
-
-	std::vector<bonobo::mesh_data> submarine_model;
-	submarine_model = bonobo::loadObjects(config::resources_path("textures/submarine/submarine.obj"));
-	GLuint const submarine_diff = bonobo::loadTexture2D(config::resources_path("textures/submarine/submarine_diff.png"), true);
-	GLuint const submarine_rough = bonobo::loadTexture2D(config::resources_path("textures/submarine/submarine_spec.png"), true);
-	GLuint const submarine_normal = bonobo::loadTexture2D(config::resources_path("textures/submarine/submarine_normal.png"), true);
-
-	Node submarine;
-	submarine.set_geometry(submarine_model.at(0));
-	submarine.add_texture("submarine_diff", submarine_diff, GL_TEXTURE_2D);
-	submarine.add_texture("submarine_rough", submarine_rough, GL_TEXTURE_2D);
-	submarine.add_texture("submarine_normal", submarine_normal, GL_TEXTURE_2D);
-	submarine.set_material_constants(submarine_material);
-	submarine.get_transform().SetScale(0.01f);
-	//End submarine
 
 	//Shark
 	bonobo::material_data shark_material;
@@ -183,42 +167,6 @@ edaf80::Assignment5::run()
 	GLuint const shark_rough = bonobo::loadTexture2D(config::resources_path("textures/shark/hammershark_spec.png"), true);
 	GLuint const shark_normal = bonobo::loadTexture2D(config::resources_path("textures/shark/hammershark_normal.png"), true);
 
-	//Treasure
-	bonobo::material_data treasure_material;
-	treasure_material.ambient = glm::vec3(0.5f, 0.5f, 0.5f);
-	treasure_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
-	treasure_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
-	treasure_material.shininess = 10.0f;
-
-	std::vector<bonobo::mesh_data> treasure_model;
-	treasure_model = bonobo::loadObjects(config::resources_path("textures/treasure/treasure.obj"));
-	GLuint const treasure_diff = bonobo::loadTexture2D(config::resources_path("textures/treasure/treasure_diff.png"), true);
-	GLuint const treasure_rough = bonobo::loadTexture2D(config::resources_path("textures/treasure/treasure_spec.png"), true);
-	GLuint const treasure_normal = bonobo::loadTexture2D(config::resources_path("textures/treasure/treasure_normal.png"), true);
-
-	Node treasure;
-	treasure.set_geometry(treasure_model.at(0));
-	treasure.add_texture("shark_diff", treasure_diff, GL_TEXTURE_2D);
-	treasure.add_texture("shark_rough", treasure_rough, GL_TEXTURE_2D);
-	treasure.add_texture("shark_normal", treasure_normal, GL_TEXTURE_2D);
-	treasure.set_material_constants(treasure_material);
-	treasure.get_transform().SetScale(0.1f);
-	//End treasure
-
-	//Coin
-	bonobo::material_data coin_material;
-	coin_material.ambient = glm::vec3(0.5f, 0.5f, 0.5f);
-	coin_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
-	coin_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
-	coin_material.shininess = 10.0f;
-
-	std::vector<bonobo::mesh_data> coin_model;
-	coin_model = bonobo::loadObjects(config::resources_path("textures/treasure/coin.obj"));
-	GLuint const coin_diff = bonobo::loadTexture2D(config::resources_path("textures/treasure/coin_diff.png"), true);
-	GLuint const coin_rough = bonobo::loadTexture2D(config::resources_path("textures/treasure/coin_spec.png"), true);
-	GLuint const coin_normal = bonobo::loadTexture2D(config::resources_path("textures/treasure/coin_normal.png"), true);
-	//End coin
-
 	//Seasweed
 	bonobo::material_data seaweed_material;
 	seaweed_material.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
@@ -226,12 +174,12 @@ edaf80::Assignment5::run()
 	seaweed_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
 	seaweed_material.shininess = 10.0f;
 
-	//Seasweed
+	//bubble material
 	bonobo::material_data bubble_material;
-	seaweed_material.ambient = glm::vec3(0.0f, 0.2f, 0.7f);
-	seaweed_material.diffuse = glm::vec3(0.0f, 0.3f, 0.7f);
-	seaweed_material.specular = glm::vec3(0.2f, 0.5f, 0.5f);
-	seaweed_material.shininess = 10.0f;
+	bubble_material.ambient = glm::vec3(0.0f, 0.2f, 0.7f);
+	bubble_material.diffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+	bubble_material.specular = glm::vec3(0.2f, 0.5f, 0.5f);
+	bubble_material.shininess = 10.0f;
 
 	std::vector<bonobo::mesh_data> seaweed_model;
 	seaweed_model = bonobo::loadObjects(config::resources_path("textures/seaweed/tall_seaweed.obj"));
@@ -263,15 +211,6 @@ edaf80::Assignment5::run()
 	bool interpolate = false;
 	bool show_control_points = true;
 
-	int iRotationCnt = 0;
-	int iCollisionCnt = 0;
-	float const fSharkCollRadius = 1.0f;
-	float const fTunaCollRadius = 1.0f;
-	float const fCoinCollRadius = 1.0f;
-	float const fSubMarineCollRadius = 1.0f;
-	float const fTreasureCollRadius = 1.0f;
-	bool circularMovementSet = false;
-
 	float elapsed_time_s = 0.0f;
 	float delta_time_s = 0.0f;
 	bool pause_animation = false;
@@ -280,29 +219,15 @@ edaf80::Assignment5::run()
 	//Obstacle vector
 	std::vector<Node> tunas;
 	std::vector<Node> sharks;
-	std::vector<Node> rewards;
 	std::vector<Node> seaweeds;
 	std::vector<Node> bubbles;
-	int iMaxNumberofCoins = 0;
-	int iMaxNumberofTunas = 1;
+	int iMaxNumberofTunas = 3;
 	int iMaxNumberofSharks = 0;
 	int iMaxNumberofSeaweeds = 0;
-	int iMaxNumberofBubbles = 0;
-	const int iGameRadius = 10;
-	int iRewardCounter = 0;
-	int iEngineCounter = 3;
+	int iMaxNumberofBubbles = 5;
+	const int iGameRadius = 5;
 
-	auto const coin_set_uniforms =
-		[&light_position, &camera_position, &coin_material, &elapsed_time_s](GLuint program) {
-		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
-		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
-		glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(coin_material.ambient));
-		glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(coin_material.diffuse));
-		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(coin_material.specular));
-		glUniform1f(glGetUniformLocation(program, "shininess"), coin_material.shininess);
-		glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
-		};
-
+	//Setup seaweed uniform
 	auto const seaweed_set_uniforms =
 		[&light_position, &camera_position, &seaweed_material, &elapsed_time_s](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
@@ -314,6 +239,7 @@ edaf80::Assignment5::run()
 		glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
 		};
 
+	//Setup bubble uniform
 	auto const bubble_set_uniforms =
 		[&light_position, &camera_position, &bubble_material](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
@@ -324,27 +250,13 @@ edaf80::Assignment5::run()
 		glUniform1f(glGetUniformLocation(program, "shininess"), bubble_material.shininess);
 		};
 
-	//Initial position of coins
-	for (std::size_t i = 0; i < iMaxNumberofCoins; ++i) {
-		Node _coin;
-		glm::vec3 coin_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
-		_coin.set_geometry(coin_model.at(0));
-		_coin.get_transform().SetTranslate(coin_location);
-		_coin.set_material_constants(coin_material);
-		_coin.add_texture("coin_diff", coin_diff, GL_TEXTURE_2D);
-		_coin.add_texture("coin_spec", coin_rough, GL_TEXTURE_2D);
-		_coin.add_texture("coin_normal", coin_normal, GL_TEXTURE_2D);
-		_coin.set_program(&shark_shader, coin_set_uniforms);
-		rewards.push_back(_coin);
-	}
-
 	//Initial position of seaweed
 	for (std::size_t i = 0; i < iMaxNumberofSeaweeds; ++i) {
 		Node _seaweed;
 		glm::vec3 seaweed_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
 		_seaweed.set_geometry(seaweed_model.at(0));
 		_seaweed.get_transform().SetTranslate(seaweed_location);
-		_seaweed.set_material_constants(coin_material);
+		_seaweed.set_material_constants(seaweed_material);
 		_seaweed.add_texture("seaweed_diff", seaweed_diff, GL_TEXTURE_2D);
 		_seaweed.add_texture("seaweed_spec", seaweed_spec, GL_TEXTURE_2D);
 		_seaweed.add_texture("seaweed_normal", seaweed_normal, GL_TEXTURE_2D);
@@ -360,8 +272,7 @@ edaf80::Assignment5::run()
 		_bubble.set_geometry(bubble_shape);
 		_bubble.get_transform().SetTranslate(bubble_location);
 		_bubble.get_transform().SetScale(rand()%5);
-		_bubble.set_program(&diffuse_shader, bubble_set_uniforms);
-
+		_bubble.set_program(&bubble_shader, bubble_set_uniforms);
 		bubbles.push_back(_bubble);
 	}
 
@@ -387,7 +298,6 @@ edaf80::Assignment5::run()
 	{
 		CircularMovingSpeed.push_back((rand() % 4)*(Pi/20));
 	}
-
 	std::vector<glm::vec3> LinearMovingDirection;
 	for (std::size_t i = 0; i < tunas.size(); i++)
 	{
@@ -420,8 +330,6 @@ edaf80::Assignment5::run()
 
 	//Initial treasure position
 	glm::vec3 TreasurePosition = glm::vec3((rand() % 20), (rand() % 20), (rand() % 20));
-
-	GameState gameState = MENU;
 	while (!glfwWindowShouldClose(window)) {
 		
 		float fMovingSpeed = 0.1f;
@@ -437,14 +345,12 @@ edaf80::Assignment5::run()
 			elapsed_time_s += std::chrono::duration<float>(deltaTimeUs).count();
 		}
 
-		
-		//End control points
-
 		//tuna uniform
 		auto const tuna_set_uniforms =
-			[&use_normal_mapping, &light_position, &camera_position, &tuna_material, &elapsed_time_s](GLuint program) {
+			[&use_normal_mapping, &light_position, &light_position_2, &camera_position, &tuna_material, &elapsed_time_s](GLuint program) {
 			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
 			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+			glUniform3fv(glGetUniformLocation(program, "light_position_2"), 1, glm::value_ptr(light_position_2));
 			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
 			glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(tuna_material.ambient));
 			glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(tuna_material.diffuse));
@@ -452,21 +358,6 @@ edaf80::Assignment5::run()
 			glUniform1f(glGetUniformLocation(program, "shininess"), tuna_material.shininess);
 			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
 			};
-		//tuna.set_program(&tuna_shader, tuna_set_uniforms);
-
-		//submarine uniform
-		auto const submarine_set_uniforms =
-			[&use_normal_mapping, &light_position, &camera_position, &submarine_material, &elapsed_time_s](GLuint program) {
-			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
-			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
-			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
-			glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(submarine_material.ambient));
-			glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(submarine_material.diffuse));
-			glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(submarine_material.specular));
-			glUniform1f(glGetUniformLocation(program, "shininess"), submarine_material.shininess);
-			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
-			};
-		submarine.set_program(&submarine_shader, submarine_set_uniforms);
 
 		//shark uniform
 		auto const shark_set_uniforms =
@@ -480,21 +371,6 @@ edaf80::Assignment5::run()
 			glUniform1f(glGetUniformLocation(program, "shininess"), shark_material.shininess);
 			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
 			};
-		//shark.set_program(&shark_shader, shark_set_uniforms);
-
-		//treasure uniform
-		auto const treasure_set_uniforms =
-			[&use_normal_mapping, &light_position, &camera_position, &treasure_material, &elapsed_time_s](GLuint program) {
-			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
-			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
-			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
-			glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(treasure_material.ambient));
-			glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(treasure_material.diffuse));
-			glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(treasure_material.specular));
-			glUniform1f(glGetUniformLocation(program, "shininess"), treasure_material.shininess);
-			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
-			};
-		treasure.set_program(&shark_shader, treasure_set_uniforms);
 
 		inputHandler.SetUICapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
 		glfwPollEvents();
@@ -540,23 +416,6 @@ edaf80::Assignment5::run()
 		if (!shader_reload_failed) {
 
 			skybox.render(mCamera.GetWorldToClipMatrix());
-			//submarine.render(mCamera.GetWorldToClipMatrix());
-
-			//Render coins
-			for (int i = 0; i < rewards.size(); i++)
-			{
-				if (0 == edaf80::Assignment5::collisionCount(submarine, rewards.at(i), 1.0f, 1.0f))
-				{
-					rewards.at(i).render(mCamera.GetWorldToClipMatrix());
-					rewards.at(i).get_transform().RotateY(Pi / 30);
-				}
-				else
-				{
-					iRewardCounter++; //Stop render the coin at collision
-					rewards.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius))); //replace with a new coin
-					std::cout << "Point count " << iRewardCounter << "\n";
-				}
-			}
 
 			//Render seaweeds
 			for (int i = 0; i < seaweeds.size(); i++)
@@ -570,7 +429,8 @@ edaf80::Assignment5::run()
 			{
 				bubbles.at(i).render(mCamera.GetWorldToClipMatrix());
 				//bubble moving up
-				edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.004f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
+				// Temporarily remove bubbles movement
+				//edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.004f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
 				glm::vec3 bubbleLoc = bubbles.at(i).get_transform().GetTranslation();
 				//Relocate to new location if moving out of the gamezone
 				if (bubbleLoc.x > iGameRadius || bubbleLoc.x < -iGameRadius ||
