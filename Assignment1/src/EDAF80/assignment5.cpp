@@ -74,7 +74,14 @@ edaf80::Assignment5::run()
 	if (skybox_shader == 0u)
 		LogError("Failed to load skybox shader");
 
-	//Register tuna shader
+	GLuint tank_shader = 0u;  
+	program_manager.CreateAndRegisterProgram("Tank", 
+		{ { ShaderType::vertex, "EDAF80/tank.vert" }, 
+		  { ShaderType::fragment, "EDAF80/tank.frag" } }, 
+		tank_shader  
+	);  
+
+	//tuna shader
 	GLuint tuna_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Tuna",
 		{ { ShaderType::vertex, "EDAF80/tuna.vert" },
@@ -118,6 +125,18 @@ edaf80::Assignment5::run()
 		return;
 	}
 
+	auto tank_shape = parametric_shapes::createSphere(7.0f, 100u, 100u);
+	if (tank_shape.vao == 0u) { 
+		LogError("Failed to retrieve the mesh for the transparent sphere");
+		return;
+	}
+
+	auto just_sphere = parametric_shapes::createSphere(2.0f, 100u, 100u);
+	if (just_sphere.vao == 0u) {
+		LogError("Failed to retrieve the mesh for the just sphere");
+		return;
+	}
+
 	//Bubble shape
 	auto bubble_shape = parametric_shapes::createSphere(0.1f, 30u, 30u);
 	if (bubble_shape.vao == 0u) {
@@ -141,6 +160,32 @@ edaf80::Assignment5::run()
 	skybox.set_geometry(skybox_shape);
 	skybox.add_texture("skybox_texture", skybox_texture, GL_TEXTURE_CUBE_MAP);
 	skybox.set_program(&skybox_shader, set_uniforms);
+
+	//Add material
+	bonobo::material_data tank_material;  
+	tank_material.ambient = glm::vec3(0.0f, 0.0f, 0.3f); 
+	tank_material.diffuse = glm::vec3(0.0f, 0.0f, 0.2f); 
+	tank_material.specular = glm::vec3(1.0f, 1.0f, 1.0f); 
+	tank_material.shininess = 10.0f; 
+	GLuint const water_normal_texture = bonobo::loadTexture2D(config::resources_path("textures/waves.png"), true); 
+	GLuint const water_reflection_texture = bonobo::loadTextureCubeMap(
+		config::resources_path("cubemaps/Underwater/uw_ft_posx.jpg"),
+		config::resources_path("cubemaps/Underwater/uw_bk_negx.jpg"),
+		config::resources_path("cubemaps/Underwater/uw_up_posy.jpg"),
+		config::resources_path("cubemaps/Underwater/uw_dn_negy.jpg"),
+		config::resources_path("cubemaps/Underwater/uw_rt_posz.jpg"),
+		config::resources_path("cubemaps/Underwater/uw_lf_negz.jpg"),
+		true
+	);
+
+	Node transparent_sphere_node; 
+	transparent_sphere_node.set_geometry(tank_shape);
+	transparent_sphere_node.add_texture("water_normal_texture", water_normal_texture, GL_TEXTURE_2D);
+	transparent_sphere_node.add_texture("water_reflection_texture", water_reflection_texture, GL_TEXTURE_CUBE_MAP);
+	transparent_sphere_node.set_material_constants(tank_material);
+
+	Node just_node; 
+	just_node.set_geometry(just_sphere); 
 
 
 	//Tuna material
@@ -197,6 +242,11 @@ edaf80::Assignment5::run()
 	glClearDepthf(1.0f);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthFunc(GL_LESS);
+	//glEnable(GL_CULL_FACE); 
+	//glCullFace(GL_FRONT);  
 
 	float Pi = 3.14f;
 	bool use_orbit_camera = false;
@@ -353,6 +403,17 @@ edaf80::Assignment5::run()
 			elapsed_time_s += std::chrono::duration<float>(deltaTimeUs).count();
 		}
 
+		auto const water_set_uniforms = [&elapsed_time_s, &use_normal_mapping, &light_position, &camera_position](GLuint program) { 
+			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s); 
+			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0); 
+			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position)); 
+			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position)); 
+			};
+		transparent_sphere_node.set_program(&tank_shader, water_set_uniforms);
+		just_node.set_program(&diffuse_shader, bubble_set_uniforms); 
+		
+		//End control points
+
 		//tuna uniform
 		auto const tuna_set_uniforms =
 			[&use_normal_mapping, &light_position, &light_position_2, &camera_position, &tuna_material, &elapsed_time_s](GLuint program) {
@@ -472,6 +533,8 @@ edaf80::Assignment5::run()
 			/*sharks.at(0).get_transform().SetTranslate(glm::vec3(2.0f));
 			sharks.at(0).set_program(&shark_shader, shark_set_uniforms);
 			sharks.at(0).render(mCamera.GetWorldToClipMatrix());*/
+			//just_node.render(mCamera.GetWorldToClipMatrix()); 
+			transparent_sphere_node.render(mCamera.GetWorldToClipMatrix());
 		}
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

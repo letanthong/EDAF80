@@ -74,5 +74,7 @@ void main()
 //	frag_color = vec4(normal, 1.0);
 
 	frag_color = water_color + reflection_color * fresnel + refraction_color * (1 - fresnel);
-	
+
+
+	//frag_color = vec4(1.0, 0.0, 0.0, 1.0);
 }
