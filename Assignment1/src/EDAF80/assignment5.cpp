@@ -125,6 +125,12 @@ edaf80::Assignment5::run()
 		return;
 	}
 
+	auto just_sphere = parametric_shapes::createSphere(2.0f, 100u, 100u);
+	if (just_sphere.vao == 0u) {
+		LogError("Failed to retrieve the mesh for the just sphere");
+		return;
+	}
+
 	//Bubble shape
 	auto bubble_shape = parametric_shapes::createSphere(0.1f, 10u, 10u);
 	if (bubble_shape.vao == 0u) {
@@ -168,7 +174,10 @@ edaf80::Assignment5::run()
 	transparent_sphere_node.set_geometry(tank_shape);
 	transparent_sphere_node.add_texture("water_normal_texture", water_normal_texture, GL_TEXTURE_2D);
 	transparent_sphere_node.add_texture("water_reflection_texture", water_reflection_texture, GL_TEXTURE_CUBE_MAP);
-	transparent_sphere_node.set_material_constants(tank_material); 
+	transparent_sphere_node.set_material_constants(tank_material);
+
+	Node just_node; 
+	just_node.set_geometry(just_sphere); 
 
 
 	//Tuna
@@ -282,7 +291,7 @@ edaf80::Assignment5::run()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthFunc(GL_LESS); 
+	glDepthFunc(GL_LESS);
 	//glEnable(GL_CULL_FACE); 
 	//glCullFace(GL_FRONT);  
 
@@ -484,7 +493,8 @@ edaf80::Assignment5::run()
 			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position)); 
 			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position)); 
 			};
-		transparent_sphere_node.set_program(&tank_shader, water_set_uniforms);  
+		transparent_sphere_node.set_program(&tank_shader, water_set_uniforms);
+		just_node.set_program(&diffuse_shader, bubble_set_uniforms); 
 		
 		//End control points
 
@@ -653,6 +663,7 @@ edaf80::Assignment5::run()
 			/*sharks.at(0).get_transform().SetTranslate(glm::vec3(2.0f));
 			sharks.at(0).set_program(&shark_shader, shark_set_uniforms);
 			sharks.at(0).render(mCamera.GetWorldToClipMatrix());*/
+			//just_node.render(mCamera.GetWorldToClipMatrix()); 
 			transparent_sphere_node.render(mCamera.GetWorldToClipMatrix());
 		}
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

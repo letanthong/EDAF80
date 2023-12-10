@@ -42,5 +42,6 @@ void main()
 	vec4 reflection_color = texture(water_reflection_texture, reflect(-V,N).xyz);
 	vec4 refraction_color = texture(water_reflection_texture, refract(-V,N, eta).xyz);
 
-	frag_color = water_color + refraction_color * (1 - fresnel);
+	frag_color = water_color ;//+ refraction_color * (1 - fresnel);
+	//frag_color = vec4(1.0, 1.0, 1.0, 0.5);
 }
