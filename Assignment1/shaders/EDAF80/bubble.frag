@@ -12,6 +12,8 @@ out vec4 frag_color;
 void main()
 {
 	vec3 L = normalize(light_position - fs_in.vertex);
-//	frag_color = vec4(1.0) * clamp(dot(normalize(fs_in.normal), L), 0.0, 1.0);
-	frag_color = vec4(0.8f, 0.7f, 0.0f, 1.0f);
+	vec3 N = normalize(fs_in.normal);
+	vec3 ambient_color = vec3(0.7f, 0.7f, 0.3f); //light yellow
+	frag_color = vec4(1.0) * clamp(dot(normalize(fs_in.normal), L), 0.0, 1.0) * vec4(ambient_color, 1.0f);
+	
 }

@@ -119,12 +119,13 @@ edaf80::Assignment5::run()
 	}
 
 	//Bubble shape
-	auto bubble_shape = parametric_shapes::createSphere(0.1f, 10u, 10u);
+	auto bubble_shape = parametric_shapes::createSphere(0.1f, 30u, 30u);
 	if (bubble_shape.vao == 0u) {
 		LogError("Failed to retrieve the mesh for the skybox");
 		return;
 	}
 
+	//Skybox load textures
 	GLuint const skybox_texture = bonobo::loadTextureCubeMap(
 		config::resources_path("cubemaps/Underwater/uw_ft_posx.jpg"),
 		config::resources_path("cubemaps/Underwater/uw_bk_negx.jpg"),
@@ -135,52 +136,56 @@ edaf80::Assignment5::run()
 		true
 	);
 
+	//Skybox declaration
 	Node skybox;
 	skybox.set_geometry(skybox_shape);
 	skybox.add_texture("skybox_texture", skybox_texture, GL_TEXTURE_CUBE_MAP);
 	skybox.set_program(&skybox_shader, set_uniforms);
 
 
-	//Tuna
+	//Tuna material
 	bonobo::material_data tuna_material;
 	tuna_material.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
 	tuna_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
 	tuna_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
 	tuna_material.shininess = 5.0f;
 
+	//Tuna load models
 	std::vector<bonobo::mesh_data> tuna_model;
 	tuna_model = bonobo::loadObjects(config::resources_path("textures/tuna/tuna_fish.obj"));
 	GLuint const tuna_body_diff = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_diff.png"), true);
 	GLuint const tuna_body_rough = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_rough.png"), true);
 	GLuint const tuna_body_normal = bonobo::loadTexture2D(config::resources_path("textures/tuna/tuna_body_normal.png"), true);
 
-	//Shark
+	//Shark material
 	bonobo::material_data shark_material;
 	shark_material.ambient = glm::vec3(0.5f, 0.5f, 0.5f);
 	shark_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
 	shark_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
 	shark_material.shininess = 10.0f;
 
+	//Shark load model
 	std::vector<bonobo::mesh_data> shark_model;
 	shark_model = bonobo::loadObjects(config::resources_path("textures/shark/hammershark.obj"));
 	GLuint const shark_diff = bonobo::loadTexture2D(config::resources_path("textures/shark/hammershark_diff.png"), true);
 	GLuint const shark_rough = bonobo::loadTexture2D(config::resources_path("textures/shark/hammershark_spec.png"), true);
 	GLuint const shark_normal = bonobo::loadTexture2D(config::resources_path("textures/shark/hammershark_normal.png"), true);
 
-	//Seasweed
+	//Seasweed material
 	bonobo::material_data seaweed_material;
 	seaweed_material.ambient = glm::vec3(0.3f, 0.3f, 0.3f);
 	seaweed_material.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
 	seaweed_material.specular = glm::vec3(0.5f, 0.5f, 0.5f);
 	seaweed_material.shininess = 10.0f;
 
-	//bubble material
+	//Bubble material
 	bonobo::material_data bubble_material;
 	bubble_material.ambient = glm::vec3(0.0f, 0.2f, 0.7f);
 	bubble_material.diffuse = glm::vec3(0.5f, 0.5f, 0.5f);
 	bubble_material.specular = glm::vec3(0.2f, 0.5f, 0.5f);
 	bubble_material.shininess = 10.0f;
 
+	//Seaweed load model
 	std::vector<bonobo::mesh_data> seaweed_model;
 	seaweed_model = bonobo::loadObjects(config::resources_path("textures/seaweed/tall_seaweed.obj"));
 	GLuint const seaweed_diff = bonobo::loadTexture2D(config::resources_path("textures/seaweed/seaweed_diff.png"), true);
@@ -194,7 +199,6 @@ edaf80::Assignment5::run()
 	glEnable(GL_DEPTH_TEST);
 
 	float Pi = 3.14f;
-
 	bool use_orbit_camera = false;
 	auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -216,7 +220,7 @@ edaf80::Assignment5::run()
 	bool pause_animation = false;
 
 
-	//Obstacle vector
+	//Objects vectors
 	std::vector<Node> tunas;
 	std::vector<Node> sharks;
 	std::vector<Node> seaweeds;
@@ -250,7 +254,7 @@ edaf80::Assignment5::run()
 		glUniform1f(glGetUniformLocation(program, "shininess"), bubble_material.shininess);
 		};
 
-	//Initial position of seaweed
+	//Initialize position of seaweeds
 	for (std::size_t i = 0; i < iMaxNumberofSeaweeds; ++i) {
 		Node _seaweed;
 		glm::vec3 seaweed_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
@@ -265,7 +269,7 @@ edaf80::Assignment5::run()
 		seaweeds.push_back(_seaweed);
 	}
 
-	//Initial position of bubbles
+	//Initialize position of bubbles
 	for (std::size_t i = 0; i < iMaxNumberofBubbles; ++i) {
 		Node _bubble;
 		glm::vec3 bubble_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
@@ -276,7 +280,7 @@ edaf80::Assignment5::run()
 		bubbles.push_back(_bubble);
 	}
 
-	//Initial position of tunas
+	//Initialize position of tunas
 	for (std::size_t i = 0; i < iMaxNumberofTunas; ++i) {
 		Node _tuna;
 		glm::vec3 tuna_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of fishes
@@ -288,16 +292,22 @@ edaf80::Assignment5::run()
 		_tuna.set_material_constants(tuna_material);
 		tunas.push_back(_tuna);
 	}
+
+	//Initialize tuna moving radius
 	std::vector<float> fTunaMovingRadius;
 	for (std::size_t i = 0; i < tunas.size(); i++)
 	{
 		fTunaMovingRadius.push_back(rand() % iGameRadius);
 	}
+
+	//Initialize tuna moving omega
 	std::vector<float> CircularMovingSpeed;
 	for (std::size_t i = 0; i < tunas.size(); i++)
 	{
 		CircularMovingSpeed.push_back((rand() % 4)*(Pi/20));
 	}
+
+	//Initialize linear moving direction
 	std::vector<glm::vec3> LinearMovingDirection;
 	for (std::size_t i = 0; i < tunas.size(); i++)
 	{
@@ -317,24 +327,22 @@ edaf80::Assignment5::run()
 		_shark.get_transform().SetTranslate(shark_location);
 		sharks.push_back(_shark);
 	}
+
+	//Initailize shark moving radius
 	std::vector<float> fSharkMovingRadius;
 	for (std::size_t i = 0; i < sharks.size(); i++)
 	{
 		fSharkMovingRadius.push_back(rand() % iGameRadius);
 	}
+
+	//Initialize shark moving speed
 	std::vector<float> fSharkMovingSpeed;
 	for (std::size_t i = 0; i < sharks.size(); i++)
 	{
 		fSharkMovingSpeed.push_back((rand() % 5) * (Pi / 30));
 	}
 
-	//Initial treasure position
-	glm::vec3 TreasurePosition = glm::vec3((rand() % 20), (rand() % 20), (rand() % 20));
 	while (!glfwWindowShouldClose(window)) {
-		
-		float fMovingSpeed = 0.1f;
-		
-		float fMovingRotAngle = Pi / 8;
 		bool menuOpen = false;
 		auto& io = ImGui::GetIO();
 		auto const nowTime = std::chrono::high_resolution_clock::now();
