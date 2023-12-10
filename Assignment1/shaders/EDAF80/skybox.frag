@@ -9,5 +9,7 @@ out vec4 frag_color;
 
 void main()
 {
-	frag_color = texture(image, fs_in.skyboxcoord);
+	float light_factor = 0.5;
+	frag_color = light_factor * texture(image, fs_in.skyboxcoord);
+//	frag_color = vec4(1.0f);
 }
