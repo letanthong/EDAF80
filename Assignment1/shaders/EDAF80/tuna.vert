@@ -21,11 +21,11 @@ out VS_OUT {
 void main()
 {
 	vec3 vertex_pos = vertex;
-	float offset = 0.001 * cos(elapsed_time_s);
+	float offset = 0.05 * cos(elapsed_time_s);
 	float pivot_angle = 0.1 * cos(elapsed_time_s);
 	mat2 rotation_matrix = mat2(vec2(cos(pivot_angle), -sin(pivot_angle)), vec2(sin(pivot_angle), cos(pivot_angle)));
 	float body = (vertex_pos.z + 1.0) / 3.0;
-	float mask = smoothstep(0.0, 2.0, 1.0 - body);
+	float mask = smoothstep(0.0, 1.0, 1.0 - body);
 
 	vertex_pos.x += offset;
 	vertex_pos.xz = rotation_matrix * vertex_pos.xz;
