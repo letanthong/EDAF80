@@ -48,7 +48,7 @@ void main()
 	tuna_body_rough_color = texture(tuna_body_rough, fs_in.texcoord).rgb;
 
 	vec3 diffuse_body = tuna_body_diff_color  * max( dot(N_body, L), 0.0);
-	vec3 specular_body = tuna_body_rough_color * pow( max( dot(reflect(-L,N_body), V) , 0.0 ), shininess ); 
+	vec3 specular_body = tuna_body_rough_color * pow( max( dot(reflect(-L,N_body), V) , 0.0 ), shininess );
 
 	frag_color_body.xyz = diffuse_body + specular_body;
 	frag_color_body.w = 1.0;

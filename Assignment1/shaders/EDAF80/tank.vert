@@ -9,30 +9,21 @@ layout (location = 4) in vec3 binormal;
 uniform mat4 vertex_model_to_world;
 uniform mat4 normal_model_to_world;
 uniform mat4 vertex_world_to_clip;
-uniform float elapsed_time_s;
 
 out VS_OUT {
 	vec3 vertex;
 	vec3 normal;
-	vec2 text_coord;
-	vec3 tangents;
-	vec3 binormal;
 	mat3 TBN;
 } vs_out;
 
 void main()
 {
-	vec3 displace_vertex = vertex;
-	
-	vec3 T = normalize(vs_out.tangents);
-	vec3 B = normalize(vs_out.binormal);
-	vec3 N = normalize(vs_out.normal);
+	vs_out.vertex = vec3(vertex_model_to_world * vec4(vertex, 1.0f));
+	vs_out.normal = vec3(normal_model_to_world * vec4(normal, 0.0));
+	vec3 T = normalize(vec3(vertex_model_to_world * vec4(tangents, 0.0)));
+	vec3 B = normalize(vec3(vertex_model_to_world * vec4(binormal, 0.0)));
+	vec3 N = normalize(vec3(normal_model_to_world * vec4(normal, 0.0)));
 	vs_out.TBN = mat3(T, B, N);
-	vs_out.vertex = vec3(vertex_model_to_world * vec4(displace_vertex, 1.0f));
-	vs_out.normal = normal;
-	vs_out.text_coord = text_coord.xy;
-	vs_out.tangents = tangents;
-	vs_out.binormal = binormal;
 
-	gl_Position = vertex_world_to_clip * vertex_model_to_world * vec4(displace_vertex, 1.0f);
+	gl_Position = vertex_world_to_clip * vertex_model_to_world * vec4(vertex, 1.0f);
 }

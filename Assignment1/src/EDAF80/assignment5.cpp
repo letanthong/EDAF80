@@ -113,13 +113,13 @@ edaf80::Assignment5::run()
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position)); };
 
 	//Skybox
-	auto skybox_shape = parametric_shapes::createSphere(30.0f, 100u, 100u);
+	auto skybox_shape = parametric_shapes::createSphere(100.0f, 1000u, 1000u);
 	if (skybox_shape.vao == 0u) {
 		LogError("Failed to retrieve the mesh for the skybox");
 		return;
 	}
 
-	auto tank_shape = parametric_shapes::createSphere(7.0f, 100u, 100u);
+	auto tank_shape = parametric_shapes::createSphere(20.0f, 1000u, 1000u);
 	if (tank_shape.vao == 0u) { 
 		LogError("Failed to retrieve the mesh for the transparent sphere");
 		return;
@@ -169,15 +169,6 @@ edaf80::Assignment5::run()
 		config::resources_path("cubemaps/Underwater/uw_lf_negz.jpg"),
 		true
 	);
-
-	Node transparent_sphere_node; 
-	transparent_sphere_node.set_geometry(tank_shape);
-	transparent_sphere_node.add_texture("water_normal_texture", water_normal_texture, GL_TEXTURE_2D);
-	transparent_sphere_node.add_texture("water_reflection_texture", water_reflection_texture, GL_TEXTURE_CUBE_MAP);
-	transparent_sphere_node.set_material_constants(tank_material);
-
-	Node just_node; 
-	just_node.set_geometry(just_sphere); 
 
 
 	//Tuna
@@ -288,12 +279,6 @@ edaf80::Assignment5::run()
 
 	glClearDepthf(1.0f);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthFunc(GL_LESS);
-	//glEnable(GL_CULL_FACE); 
-	//glCullFace(GL_FRONT);  
 
 	float Pi = 3.14f;
 
@@ -334,10 +319,10 @@ edaf80::Assignment5::run()
 	std::vector<Node> seaweeds;
 	std::vector<Node> bubbles;
 	int iMaxNumberofCoins = 0;
-	int iMaxNumberofTunas = 1;
-	int iMaxNumberofSharks = 0;
+	int iMaxNumberofTunas = 20;
+	int iMaxNumberofSharks = 10;
 	int iMaxNumberofSeaweeds = 0;
-	int iMaxNumberofBubbles = 0;
+	int iMaxNumberofBubbles = 50;
 	const int iGameRadius = 10;
 	int iRewardCounter = 0;
 	int iEngineCounter = 3;
@@ -402,6 +387,13 @@ edaf80::Assignment5::run()
 		_seaweed.set_program(&shark_shader, seaweed_set_uniforms);
 		seaweeds.push_back(_seaweed);
 	}
+	auto const water_set_uniforms = [&elapsed_time_s, &use_normal_mapping, &light_position, &camera_position](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		};
+	Node transparent_sphere_node; 
+	transparent_sphere_node.set_geometry(tank_shape); 
+	transparent_sphere_node.set_program(&tank_shader, water_set_uniforms);
 
 	//Initial position of bubbles
 	for (std::size_t i = 0; i < iMaxNumberofBubbles; ++i) {
@@ -410,7 +402,7 @@ edaf80::Assignment5::run()
 		_bubble.set_geometry(bubble_shape);
 		_bubble.get_transform().SetTranslate(bubble_location);
 		_bubble.get_transform().SetScale(rand()%5);
-		_bubble.set_program(&diffuse_shader, bubble_set_uniforms);
+		_bubble.set_program(&tank_shader, water_set_uniforms); 
 
 		bubbles.push_back(_bubble);
 	}
@@ -486,15 +478,6 @@ edaf80::Assignment5::run()
 			delta_time_s = std::chrono::duration<float>(deltaTimeUs).count();
 			elapsed_time_s += std::chrono::duration<float>(deltaTimeUs).count();
 		}
-
-		auto const water_set_uniforms = [&elapsed_time_s, &use_normal_mapping, &light_position, &camera_position](GLuint program) { 
-			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s); 
-			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0); 
-			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position)); 
-			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position)); 
-			};
-		transparent_sphere_node.set_program(&tank_shader, water_set_uniforms);
-		just_node.set_program(&diffuse_shader, bubble_set_uniforms); 
 		
 		//End control points
 
@@ -596,9 +579,10 @@ edaf80::Assignment5::run()
 		bonobo::changePolygonMode(polygon_mode);
 
 		if (!shader_reload_failed) {
-
-			skybox.render(mCamera.GetWorldToClipMatrix());
-			//transparent_sphere_node.render(mCamera.GetWorldToClipMatrix());
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS); 
+			glDisable(GL_BLEND); 
+ 			skybox.render(mCamera.GetWorldToClipMatrix());
 			//submarine.render(mCamera.GetWorldToClipMatrix());
 
 			//Render coins
@@ -624,12 +608,32 @@ edaf80::Assignment5::run()
 				seaweeds.at(i).get_transform().RotateY(Pi / 200);
 			}
 
+			//Render tunas
+			for (int i = 0; i < tunas.size(); i++)
+			{
+				tunas.at(i).set_program(&tuna_shader, tuna_set_uniforms);
+				tunas.at(i).render(mCamera.GetWorldToClipMatrix());
+				edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+			}
+
+			//Render sharks
+			for (int i = 0; i < sharks.size(); i++)
+			{
+				sharks.at(i).set_program(&tuna_shader, tuna_set_uniforms);
+				sharks.at(i).render(mCamera.GetWorldToClipMatrix());
+				edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+			}
+
+			glEnable(GL_BLEND); 
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
+			glDepthMask(GL_FALSE);  
+			transparent_sphere_node.render(mCamera.GetWorldToClipMatrix());
 			//Render bubbles
 			for (int i = 0; i < bubbles.size(); i++)
 			{
 				bubbles.at(i).render(mCamera.GetWorldToClipMatrix());
 				//bubble moving up
-				edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.004f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
+				edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.001f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
 				glm::vec3 bubbleLoc = bubbles.at(i).get_transform().GetTranslation();
 				//Relocate to new location if moving out of the gamezone
 				if (bubbleLoc.x > iGameRadius || bubbleLoc.x < -iGameRadius ||
@@ -639,32 +643,7 @@ edaf80::Assignment5::run()
 					bubbles.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)));
 				}
 			}
-
-			//Render tunas
-			/*for (int i = 0; i < tunas.size(); i++)
-			{
-				tunas.at(i).set_program(&tuna_shader, tuna_set_uniforms);
-				tunas.at(i).render(mCamera.GetWorldToClipMatrix());
-				edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
-			}*/
-
-			//change location of the first tuna back to the origin
-			tunas.at(0).get_transform().SetTranslate(glm::vec3(0.0f));
-			tunas.at(0).set_program(&tuna_shader, tuna_set_uniforms);
-			tunas.at(0).render(mCamera.GetWorldToClipMatrix());
-			//Render sharks
-			for (int i = 0; i < sharks.size(); i++)
-			{
-				sharks.at(i).set_program(&tuna_shader, tuna_set_uniforms);
-				sharks.at(i).render(mCamera.GetWorldToClipMatrix());
-				edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
-			}
-
-			/*sharks.at(0).get_transform().SetTranslate(glm::vec3(2.0f));
-			sharks.at(0).set_program(&shark_shader, shark_set_uniforms);
-			sharks.at(0).render(mCamera.GetWorldToClipMatrix());*/
-			//just_node.render(mCamera.GetWorldToClipMatrix()); 
-			transparent_sphere_node.render(mCamera.GetWorldToClipMatrix());
+			glDepthMask(GL_TRUE);
 		}
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
