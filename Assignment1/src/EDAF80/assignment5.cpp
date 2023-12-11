@@ -476,22 +476,6 @@ edaf80::Assignment5::run()
  			skybox.render(mCamera.GetWorldToClipMatrix());
 			//submarine.render(mCamera.GetWorldToClipMatrix());
 
-			//Render coins
-			for (int i = 0; i < rewards.size(); i++)
-			{
-				if (0 == edaf80::Assignment5::collisionCount(submarine, rewards.at(i), 1.0f, 1.0f))
-				{
-					rewards.at(i).render(mCamera.GetWorldToClipMatrix());
-					rewards.at(i).get_transform().RotateY(Pi / 30);
-				}
-				else
-				{
-					iRewardCounter++; //Stop render the coin at collision
-					rewards.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius))); //replace with a new coin
-					std::cout << "Point count " << iRewardCounter << "\n";
-				}
-			}
-
 			//Render seaweeds
 			for (int i = 0; i < seaweeds.size(); i++)
 			{
