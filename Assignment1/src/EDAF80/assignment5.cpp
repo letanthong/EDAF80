@@ -427,7 +427,9 @@ edaf80::Assignment5::run()
 			{
 				tunas.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 				tunas.at(i).render(mCamera.GetWorldToClipMatrix());
-				edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s); 
+				if (!pause_animation) {
+					edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+				}
 			}
 
 			//Render sharks
@@ -435,7 +437,9 @@ edaf80::Assignment5::run()
 			{
 				sharks.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 				sharks.at(i).render(mCamera.GetWorldToClipMatrix());
-				edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+				if (!pause_animation) {
+					edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+				}
 			}
 
 			glEnable(GL_BLEND); 
@@ -448,7 +452,9 @@ edaf80::Assignment5::run()
 			{
 				bubbles.at(i).render(mCamera.GetWorldToClipMatrix());
 				//bubble moving up
-				edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.001f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
+				if (!pause_animation) {
+					edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.001f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
+				}
 				glm::vec3 bubbleLoc = bubbles.at(i).get_transform().GetTranslation();
 				//Relocate to new location if moving out of the gamezone
 				if (bubbleLoc.x > iGameRadius || bubbleLoc.x < -iGameRadius ||
