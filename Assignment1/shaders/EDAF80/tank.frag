@@ -15,15 +15,12 @@ out vec4 frag_color;
 
 void main()
 {
-	vec4 color_deep = vec4(0.0f, 0.0f, 0.1f, 0.5f);
-	vec4 color_shallow = vec4(0.0f, 0.5f, 0.5f, 0.7f);
- 
 	N = normalize(fs_in.TBN * fs_in.normal);
 
 	vec3 L = normalize(light_position - fs_in.vertex); //Light vector
 	vec3 V = normalize(camera_position - fs_in.vertex); //Viewer vector
 	float facing = 1.0f - max(dot(V, N), 0.0f);
-	vec4 water_color = color_deep;
+	vec4 water_color = vec4(0.1f, 0.3f, 0.5f, 0.3f);;
 
 	vec3 R = reflect(-L, N);
 
@@ -35,9 +32,4 @@ void main()
 	vec4 specular_color = vec4(1.0, 1.0, 1.0, 0.5) * specular; // Adjust the specular color as needed
 
 	frag_color = water_color * ambient + diffuse_color + specular_color;
-
-	//frag_color = water_color;//+ refraction_color * (1 - fresnel);
-	//frag_color = vec4(0.2, 0.2, 0.2, 0.3);
-//	if (frag_color.a == 0.0)
-//		discard;
 }

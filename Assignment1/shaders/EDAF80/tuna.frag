@@ -53,7 +53,7 @@ void main()
 	vec3 diffuse_body = tuna_body_diff_color  * max( dot(N_body, L), 0.0);
 	vec3 diffuse_body_2 = tuna_body_diff_color  * max( dot(N_body, L2), 0.0);
 	vec3 specular_body = tuna_body_rough_color * pow( max( dot(reflect(-L,N_body), V) , 0.0 ), shininess );
-	vec3 specular_body_2 = tuna_body_rough_color * pow( max( dot(reflect(-L2,N_body), V) , 0.0 ), shininess );
+	vec3 specular_body_2 = tuna_body_rough_color * pow( max( dot(reflect(-L2,N_body), V) , 0.0 ), 5.0f );
 
 	frag_color_body.xyz = diffuse_body + specular_body + diffuse_body_2 + specular_body_2;
 	frag_color_body.w = 1.0;
