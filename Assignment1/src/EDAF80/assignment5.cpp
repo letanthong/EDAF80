@@ -125,15 +125,9 @@ edaf80::Assignment5::run()
 		return;
 	}
 
-	auto tank_shape = parametric_shapes::createSphere(20.0f, 1000u, 1000u);
+	auto tank_shape = parametric_shapes::createSphere(25.0f, 1000u, 1000u);
 	if (tank_shape.vao == 0u) { 
 		LogError("Failed to retrieve the mesh for the transparent sphere");
-		return;
-	}
-
-	auto just_sphere = parametric_shapes::createSphere(2.0f, 100u, 100u);
-	if (just_sphere.vao == 0u) {
-		LogError("Failed to retrieve the mesh for the just sphere");
 		return;
 	}
 
@@ -251,7 +245,6 @@ edaf80::Assignment5::run()
 	bool show_control_points = true;
 
 	float elapsed_time_s = 0.0f;
-	float delta_time_s = 0.0f;
 	bool pause_animation = false;
 
 
@@ -262,7 +255,7 @@ edaf80::Assignment5::run()
 	int iMaxNumberofTunas = 20;
 	int iMaxNumberofSharks = 10;
 	int iMaxNumberofBubbles = 50;
-	const int iGameRadius = 10;
+	const int iGameRadius = 15;
 
 	//Setup bubble uniform
 	auto const bubble_set_uniforms =
@@ -300,7 +293,7 @@ edaf80::Assignment5::run()
 	//Initialize position of bubbles
 	for (std::size_t i = 0; i < iMaxNumberofBubbles; ++i) {
 		Node _bubble;
-		glm::vec3 bubble_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
+		glm::vec3 bubble_location = glm::vec3((rand() % (2*iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius));
 		_bubble.set_geometry(bubble_shape);
 		_bubble.get_transform().SetTranslate(bubble_location);
 		_bubble.get_transform().SetScale(rand()%5);
@@ -311,7 +304,7 @@ edaf80::Assignment5::run()
 	//Initialize position of tunas
 	for (std::size_t i = 0; i < iMaxNumberofTunas; ++i) {
 		Node _tuna;
-		glm::vec3 tuna_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of fishes
+		glm::vec3 tuna_location = glm::vec3((rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius)); //Random locations of fishes
 		_tuna.set_geometry(tuna_model.at(0));
 		_tuna.get_transform().SetTranslate(tuna_location);
 		_tuna.add_texture("tuna_body_diff", tuna_body_diff, GL_TEXTURE_2D);
@@ -345,7 +338,7 @@ edaf80::Assignment5::run()
 	//Initial position of sharks
 	for (std::size_t i = 0; i < iMaxNumberofSharks; ++i) {
 		Node _shark;
-		glm::vec3 shark_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of fishes
+		glm::vec3 shark_location = glm::vec3((rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius)); //Random locations of fishes
 		_shark.set_geometry(shark_model.at(0));
 		_shark.add_texture("shark_diff", shark_diff, GL_TEXTURE_2D);
 		_shark.add_texture("shark_rough", shark_rough, GL_TEXTURE_2D);
@@ -377,7 +370,6 @@ edaf80::Assignment5::run()
 		auto const deltaTimeUs = std::chrono::duration_cast<std::chrono::microseconds>(nowTime - lastTime);
 		lastTime = nowTime;
 		if (!pause_animation) {
-			delta_time_s = std::chrono::duration<float>(deltaTimeUs).count();
 			elapsed_time_s += std::chrono::duration<float>(deltaTimeUs).count();
 		}
 		
@@ -435,7 +427,7 @@ edaf80::Assignment5::run()
 			{
 				tunas.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 				tunas.at(i).render(mCamera.GetWorldToClipMatrix());
-				edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
+				edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s); 
 			}
 
 			//Render sharks
