@@ -111,8 +111,8 @@ edaf80::Assignment5::run()
 	if (bubble_shader == 0u)
 		LogError("Failed to load bubble shader");
 
-	auto light_position = glm::vec3(20.0f, 2.0f, 20.0f);
-	auto light_position_2 = glm::vec3(-20.0f, 2.0f, -20.0f);
+	auto light_position = glm::vec3(2.0f, 4.0f, 2.0f);
+	auto light_position_2 = glm::vec3(-2.0f, 4.0f, 2.0f);
 	auto const set_uniforms = [&light_position, &light_position_2](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 		glUniform3fv(glGetUniformLocation(program, "light_position_2"), 1, glm::value_ptr(light_position_2));
@@ -125,9 +125,15 @@ edaf80::Assignment5::run()
 		return;
 	}
 
-	auto tank_shape = parametric_shapes::createSphere(25.0f, 1000u, 1000u);
+	auto tank_shape = parametric_shapes::createSphere(20.0f, 1000u, 1000u);
 	if (tank_shape.vao == 0u) { 
 		LogError("Failed to retrieve the mesh for the transparent sphere");
+		return;
+	}
+
+	auto just_sphere = parametric_shapes::createSphere(2.0f, 100u, 100u);
+	if (just_sphere.vao == 0u) {
+		LogError("Failed to retrieve the mesh for the just sphere");
 		return;
 	}
 
@@ -245,17 +251,35 @@ edaf80::Assignment5::run()
 	bool show_control_points = true;
 
 	float elapsed_time_s = 0.0f;
+	float delta_time_s = 0.0f;
 	bool pause_animation = false;
 
 
 	//Objects vectors
 	std::vector<Node> tunas;
 	std::vector<Node> sharks;
+	std::vector<Node> seaweeds;
 	std::vector<Node> bubbles;
+	int iMaxNumberofCoins = 0;
 	int iMaxNumberofTunas = 20;
 	int iMaxNumberofSharks = 10;
+	int iMaxNumberofSeaweeds = 0;
 	int iMaxNumberofBubbles = 50;
-	const int iGameRadius = 15;
+	const int iGameRadius = 10;
+	int iRewardCounter = 0;
+	int iEngineCounter = 3;
+
+	//Setup seaweed uniform
+	auto const seaweed_set_uniforms =
+		[&light_position, &camera_position, &seaweed_material, &elapsed_time_s](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(seaweed_material.ambient));
+		glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(seaweed_material.diffuse));
+		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(seaweed_material.specular));
+		glUniform1f(glGetUniformLocation(program, "shininess"), seaweed_material.shininess);
+		glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
+		};
 
 	//Setup bubble uniform
 	auto const bubble_set_uniforms =
@@ -268,43 +292,44 @@ edaf80::Assignment5::run()
 		glUniform1f(glGetUniformLocation(program, "shininess"), bubble_material.shininess);
 		};
 
-	//tuna uniform
-	auto const tuna_set_uniforms =
-		[&use_normal_mapping, &light_position, &light_position_2, &camera_position, &tuna_material, &elapsed_time_s](GLuint program) {
-		glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
-		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
-		glUniform3fv(glGetUniformLocation(program, "light_position_2"), 1, glm::value_ptr(light_position_2));
-		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
-		glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(tuna_material.ambient));
-		glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(tuna_material.diffuse));
-		glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(tuna_material.specular));
-		glUniform1f(glGetUniformLocation(program, "shininess"), tuna_material.shininess);
-		glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
-		};
-
+	//Initialize position of seaweeds
+	for (std::size_t i = 0; i < iMaxNumberofSeaweeds; ++i) {
+		Node _seaweed;
+		glm::vec3 seaweed_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
+		_seaweed.set_geometry(seaweed_model.at(0));
+		_seaweed.get_transform().SetTranslate(seaweed_location);
+		_seaweed.set_material_constants(seaweed_material);
+		_seaweed.add_texture("seaweed_diff", seaweed_diff, GL_TEXTURE_2D);
+		_seaweed.add_texture("seaweed_spec", seaweed_spec, GL_TEXTURE_2D);
+		_seaweed.add_texture("seaweed_normal", seaweed_normal, GL_TEXTURE_2D);
+		_seaweed.get_transform().SetScale(rand()%10);
+		_seaweed.set_program(&shark_shader, seaweed_set_uniforms);
+		seaweeds.push_back(_seaweed);
+	}
 	auto const water_set_uniforms = [&elapsed_time_s, &use_normal_mapping, &light_position, &camera_position](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
 		};
-	Node aquarium; 
-	aquarium.set_geometry(tank_shape);
-	aquarium.set_program(&tank_shader, water_set_uniforms);
+	Node transparent_sphere_node; 
+	transparent_sphere_node.set_geometry(tank_shape); 
+	transparent_sphere_node.set_program(&tank_shader, water_set_uniforms);
 
 	//Initialize position of bubbles
 	for (std::size_t i = 0; i < iMaxNumberofBubbles; ++i) {
 		Node _bubble;
-		glm::vec3 bubble_location = glm::vec3((rand() % (2*iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius));
+		glm::vec3 bubble_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of coins
 		_bubble.set_geometry(bubble_shape);
 		_bubble.get_transform().SetTranslate(bubble_location);
 		_bubble.get_transform().SetScale(rand()%5);
 		_bubble.set_program(&tank_shader, water_set_uniforms); 
+
 		bubbles.push_back(_bubble);
 	}
 
 	//Initialize position of tunas
 	for (std::size_t i = 0; i < iMaxNumberofTunas; ++i) {
 		Node _tuna;
-		glm::vec3 tuna_location = glm::vec3((rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius)); //Random locations of fishes
+		glm::vec3 tuna_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of fishes
 		_tuna.set_geometry(tuna_model.at(0));
 		_tuna.get_transform().SetTranslate(tuna_location);
 		_tuna.add_texture("tuna_body_diff", tuna_body_diff, GL_TEXTURE_2D);
@@ -338,7 +363,7 @@ edaf80::Assignment5::run()
 	//Initial position of sharks
 	for (std::size_t i = 0; i < iMaxNumberofSharks; ++i) {
 		Node _shark;
-		glm::vec3 shark_location = glm::vec3((rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius), (rand() % (2 * iGameRadius) - iGameRadius)); //Random locations of fishes
+		glm::vec3 shark_location = glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius)); //Random locations of fishes
 		_shark.set_geometry(shark_model.at(0));
 		_shark.add_texture("shark_diff", shark_diff, GL_TEXTURE_2D);
 		_shark.add_texture("shark_rough", shark_rough, GL_TEXTURE_2D);
@@ -370,10 +395,38 @@ edaf80::Assignment5::run()
 		auto const deltaTimeUs = std::chrono::duration_cast<std::chrono::microseconds>(nowTime - lastTime);
 		lastTime = nowTime;
 		if (!pause_animation) {
+			delta_time_s = std::chrono::duration<float>(deltaTimeUs).count();
 			elapsed_time_s += std::chrono::duration<float>(deltaTimeUs).count();
 		}
 		
 		//End control points
+
+		//tuna uniform
+		auto const tuna_set_uniforms =
+			[&use_normal_mapping, &light_position, &light_position_2, &camera_position, &tuna_material, &elapsed_time_s](GLuint program) {
+			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
+			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+			glUniform3fv(glGetUniformLocation(program, "light_position_2"), 1, glm::value_ptr(light_position_2));
+			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+			glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(tuna_material.ambient));
+			glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(tuna_material.diffuse));
+			glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(tuna_material.specular));
+			glUniform1f(glGetUniformLocation(program, "shininess"), tuna_material.shininess);
+			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
+			};
+
+		//shark uniform
+		auto const shark_set_uniforms =
+			[&use_normal_mapping, &light_position, &camera_position, &shark_material, &elapsed_time_s](GLuint program) {
+			glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
+			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+			glUniform3fv(glGetUniformLocation(program, "ambient_colour"), 1, glm::value_ptr(shark_material.ambient));
+			glUniform3fv(glGetUniformLocation(program, "diffuse_colour"), 1, glm::value_ptr(shark_material.diffuse));
+			glUniform3fv(glGetUniformLocation(program, "specular_colour"), 1, glm::value_ptr(shark_material.specular));
+			glUniform1f(glGetUniformLocation(program, "shininess"), shark_material.shininess);
+			glUniform1f(glGetUniformLocation(program, "elapsed_time_s"), elapsed_time_s);
+			};
 
 		inputHandler.SetUICapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
 		glfwPollEvents();
@@ -421,15 +474,37 @@ edaf80::Assignment5::run()
 			glDepthFunc(GL_LESS); 
 			glDisable(GL_BLEND); 
  			skybox.render(mCamera.GetWorldToClipMatrix());
+			//submarine.render(mCamera.GetWorldToClipMatrix());
+
+			//Render coins
+			for (int i = 0; i < rewards.size(); i++)
+			{
+				if (0 == edaf80::Assignment5::collisionCount(submarine, rewards.at(i), 1.0f, 1.0f))
+				{
+					rewards.at(i).render(mCamera.GetWorldToClipMatrix());
+					rewards.at(i).get_transform().RotateY(Pi / 30);
+				}
+				else
+				{
+					iRewardCounter++; //Stop render the coin at collision
+					rewards.at(i).get_transform().SetTranslate(glm::vec3((rand() % iGameRadius), (rand() % iGameRadius), (rand() % iGameRadius))); //replace with a new coin
+					std::cout << "Point count " << iRewardCounter << "\n";
+				}
+			}
+
+			//Render seaweeds
+			for (int i = 0; i < seaweeds.size(); i++)
+			{
+				seaweeds.at(i).render(mCamera.GetWorldToClipMatrix());
+				seaweeds.at(i).get_transform().RotateY(Pi / 200);
+			}
 
 			//Render tunas
 			for (int i = 0; i < tunas.size(); i++)
 			{
 				tunas.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 				tunas.at(i).render(mCamera.GetWorldToClipMatrix());
-				if (!pause_animation) {
-					edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
-				}
+				edaf80::Assignment5::moveObjectCircular(tunas.at(i), CircularMovingSpeed.at(i), fTunaMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
 			}
 
 			//Render sharks
@@ -437,24 +512,19 @@ edaf80::Assignment5::run()
 			{
 				sharks.at(i).set_program(&tuna_shader, tuna_set_uniforms);
 				sharks.at(i).render(mCamera.GetWorldToClipMatrix());
-				if (!pause_animation) {
-					edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
-				}
+				edaf80::Assignment5::moveObjectCircular(sharks.at(i), fSharkMovingSpeed.at(i), fSharkMovingRadius.at(i), CLOCKWISE, elapsed_time_s);
 			}
 
 			glEnable(GL_BLEND); 
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
-			glDepthMask(GL_FALSE);
-			//Render aquarium
-			aquarium.render(mCamera.GetWorldToClipMatrix());
+			glDepthMask(GL_FALSE);  
+			transparent_sphere_node.render(mCamera.GetWorldToClipMatrix());
 			//Render bubbles
 			for (int i = 0; i < bubbles.size(); i++)
 			{
 				bubbles.at(i).render(mCamera.GetWorldToClipMatrix());
 				//bubble moving up
-				if (!pause_animation) {
-					edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.001f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
-				}
+				edaf80::Assignment5::moveObjectLinear(bubbles.at(i), 0.001f, glm::vec3(0.0f, 1.0f, 0.0f), elapsed_time_s);
 				glm::vec3 bubbleLoc = bubbles.at(i).get_transform().GetTranslation();
 				//Relocate to new location if moving out of the gamezone
 				if (bubbleLoc.x > iGameRadius || bubbleLoc.x < -iGameRadius ||
